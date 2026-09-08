@@ -1,0 +1,1238 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>ApiCripto por dentro</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:wght@500;700;800&family=Newsreader:ital,wght@0,400;0,500;0,600;1,400&family=JetBrains+Mono:wght@400;500;700&display=swap">
+
+<style>
+/* ===========================================================================
+   Tokens. O bloco :root define a paleta CLARA completa; os dois blocos
+   abaixo redefinem SÓ os tokens. Nenhuma cor é declarada dentro de um
+   componente — tudo passa por var().
+   =========================================================================== */
+:root {
+  --bg:        #F3F4F7;
+  --surface:   #FFFFFF;
+  --sunken:    #E7E9EF;
+  --line:      #D2D6E0;
+  --line-soft: #E2E5EC;
+  --ink:       #141821;
+  --ink-soft:  #4B5262;
+  --ink-faint: #7B8394;
+
+  --accent:    #2C4A73;
+  --accent-bg: #E4EAF3;
+  --up:        #0F7B5F;
+  --up-bg:     #DFF0E9;
+  --down:      #B03A32;
+  --down-bg:   #F7E3E1;
+  --warn:      #8A5D0C;
+  --warn-bg:   #F6EBD6;
+
+  --display: "Bricolage Grotesque", "Helvetica Neue", Arial, sans-serif;
+  --body:    "Newsreader", Georgia, "Times New Roman", serif;
+  --mono:    "JetBrains Mono", ui-monospace, "SF Mono", Menlo, Consolas, monospace;
+
+  --radius: 6px;
+  --shadow: 0 1px 2px rgba(20, 24, 33, .06), 0 8px 24px -18px rgba(20, 24, 33, .35);
+}
+
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg:        #111520;
+    --surface:   #171C29;
+    --sunken:    #1E2432;
+    --line:      #2C3446;
+    --line-soft: #232A3A;
+    --ink:       #E6E9F0;
+    --ink-soft:  #A6AEC0;
+    --ink-faint: #727B8E;
+
+    --accent:    #8FB3E0;
+    --accent-bg: #1C2739;
+    --up:        #4FD1A5;
+    --up-bg:     #12291F;
+    --down:      #F08A80;
+    --down-bg:   #2E1B19;
+    --warn:      #E0B252;
+    --warn-bg:   #2B2213;
+
+    --shadow: 0 1px 2px rgba(0,0,0,.4), 0 8px 24px -18px rgba(0,0,0,.9);
+  }
+}
+
+:root[data-theme="dark"] {
+  --bg:        #111520;
+  --surface:   #171C29;
+  --sunken:    #1E2432;
+  --line:      #2C3446;
+  --line-soft: #232A3A;
+  --ink:       #E6E9F0;
+  --ink-soft:  #A6AEC0;
+  --ink-faint: #727B8E;
+
+  --accent:    #8FB3E0;
+  --accent-bg: #1C2739;
+  --up:        #4FD1A5;
+  --up-bg:     #12291F;
+  --down:      #F08A80;
+  --down-bg:   #2E1B19;
+  --warn:      #E0B252;
+  --warn-bg:   #2B2213;
+
+  --shadow: 0 1px 2px rgba(0,0,0,.4), 0 8px 24px -18px rgba(0,0,0,.9);
+}
+
+/* =========================================================================== */
+
+* { box-sizing: border-box; }
+
+body {
+  margin: 0;
+  background: var(--bg);
+  color: var(--ink);
+  font-family: var(--body);
+  font-size: 17px;
+  line-height: 1.65;
+  -webkit-font-smoothing: antialiased;
+}
+
+a { color: var(--accent); text-decoration-thickness: 1px; text-underline-offset: 2px; }
+a:focus-visible, button:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+  border-radius: 3px;
+}
+
+/* ---------- topo ---------- */
+.topo {
+  position: sticky; top: 0; z-index: 20;
+  display: flex; align-items: baseline; gap: 14px; flex-wrap: wrap;
+  padding: 12px 28px;
+  background: color-mix(in srgb, var(--bg) 88%, transparent);
+  backdrop-filter: blur(8px);
+  border-bottom: 1px solid var(--line);
+}
+.topo .marca {
+  font-family: var(--display);
+  font-weight: 800;
+  font-size: 15px;
+  letter-spacing: -.01em;
+}
+.topo .marca span { color: var(--accent); }
+.pilha {
+  display: flex; gap: 6px; flex-wrap: wrap;
+  margin-left: auto;
+  font-family: var(--mono);
+  font-size: 10.5px;
+  letter-spacing: .04em;
+  text-transform: uppercase;
+  color: var(--ink-faint);
+}
+.pilha b {
+  font-weight: 500;
+  padding: 3px 7px;
+  border: 1px solid var(--line);
+  border-radius: 100px;
+  background: var(--surface);
+}
+
+/* ---------- shell ---------- */
+.shell {
+  display: grid;
+  grid-template-columns: 250px minmax(0, 1fr);
+  gap: 48px;
+  max-width: 1180px;
+  margin: 0 auto;
+  padding: 40px 28px 120px;
+  align-items: start;
+}
+@media (max-width: 940px) {
+  .shell { grid-template-columns: minmax(0, 1fr); gap: 28px; padding-top: 28px; }
+}
+
+/* ---------- sumário ---------- */
+.sumario { position: sticky; top: 74px; }
+@media (max-width: 940px) {
+  .sumario {
+    position: static;
+    border: 1px solid var(--line);
+    border-radius: var(--radius);
+    background: var(--surface);
+    padding: 16px 18px;
+  }
+}
+.sumario h2 {
+  font-family: var(--mono);
+  font-size: 10.5px;
+  letter-spacing: .1em;
+  text-transform: uppercase;
+  color: var(--ink-faint);
+  margin: 0 0 10px;
+  font-weight: 500;
+}
+.sumario ol { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 1px; }
+.sumario a {
+  display: grid;
+  grid-template-columns: 22px 1fr;
+  gap: 6px;
+  padding: 5px 8px;
+  border-radius: 5px;
+  font-family: var(--display);
+  font-size: 13.5px;
+  font-weight: 500;
+  line-height: 1.35;
+  color: var(--ink-soft);
+  text-decoration: none;
+  border-left: 2px solid transparent;
+}
+.sumario a:hover { background: var(--sunken); color: var(--ink); }
+.sumario a i {
+  font-style: normal;
+  font-family: var(--mono);
+  font-size: 11px;
+  color: var(--ink-faint);
+}
+
+/* ---------- abertura ---------- */
+.abertura { margin-bottom: 12px; }
+.abertura h1 {
+  font-family: var(--display);
+  font-weight: 800;
+  font-size: clamp(34px, 5.2vw, 52px);
+  line-height: 1.02;
+  letter-spacing: -.03em;
+  margin: 0 0 14px;
+  text-wrap: balance;
+}
+.abertura .linha-fina {
+  font-size: 19px;
+  color: var(--ink-soft);
+  margin: 0 0 26px;
+  max-width: 62ch;
+}
+.abertura .linha-fina b { color: var(--ink); font-weight: 600; }
+
+.ficha {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+  gap: 1px;
+  background: var(--line);
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  overflow: hidden;
+}
+.ficha div { background: var(--surface); padding: 12px 14px; }
+.ficha dt {
+  font-family: var(--mono);
+  font-size: 10px;
+  letter-spacing: .09em;
+  text-transform: uppercase;
+  color: var(--ink-faint);
+  margin-bottom: 4px;
+}
+.ficha dd {
+  margin: 0;
+  font-family: var(--display);
+  font-weight: 600;
+  font-size: 15px;
+  letter-spacing: -.01em;
+}
+
+/* ---------- seções ---------- */
+section { padding-top: 46px; scroll-margin-top: 70px; }
+section > h2 {
+  font-family: var(--display);
+  font-weight: 700;
+  font-size: 27px;
+  letter-spacing: -.022em;
+  line-height: 1.15;
+  margin: 0 0 6px;
+  padding-top: 14px;
+  border-top: 1px solid var(--line);
+  text-wrap: balance;
+}
+section > h2 em {
+  font-style: normal;
+  font-family: var(--mono);
+  font-size: 12px;
+  font-weight: 500;
+  color: var(--accent);
+  display: block;
+  margin-bottom: 8px;
+  letter-spacing: .06em;
+}
+h3 {
+  font-family: var(--display);
+  font-weight: 700;
+  font-size: 17.5px;
+  letter-spacing: -.01em;
+  margin: 30px 0 8px;
+  text-wrap: balance;
+}
+h4 {
+  font-family: var(--mono);
+  font-weight: 500;
+  font-size: 11px;
+  letter-spacing: .09em;
+  text-transform: uppercase;
+  color: var(--ink-faint);
+  margin: 24px 0 8px;
+}
+p { margin: 0 0 14px; max-width: 68ch; }
+ul, ol.passos { max-width: 68ch; padding-left: 20px; margin: 0 0 14px; }
+li { margin-bottom: 6px; }
+strong { font-weight: 600; }
+code {
+  font-family: var(--mono);
+  font-size: .82em;
+  background: var(--sunken);
+  padding: 1px 5px;
+  border-radius: 4px;
+  word-break: break-word;
+}
+
+/* ---------- blocos de código ---------- */
+.bloco {
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  overflow: hidden;
+  margin: 0 0 18px;
+  background: var(--surface);
+}
+.bloco .arquivo {
+  font-family: var(--mono);
+  font-size: 10.5px;
+  letter-spacing: .05em;
+  color: var(--ink-faint);
+  padding: 7px 12px;
+  border-bottom: 1px solid var(--line-soft);
+  background: var(--sunken);
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+}
+.bloco .arquivo b { font-weight: 500; color: var(--ink-soft); }
+.bloco pre {
+  margin: 0;
+  padding: 14px 16px;
+  overflow-x: auto;
+  font-family: var(--mono);
+  font-size: 12.5px;
+  line-height: 1.62;
+  color: var(--ink);
+}
+.bloco pre .cm { color: var(--ink-faint); }
+.bloco pre .kw { color: var(--accent); }
+
+/* ---------- callouts ---------- */
+.aviso {
+  border-left: 3px solid var(--accent);
+  background: var(--accent-bg);
+  padding: 12px 16px;
+  border-radius: 0 var(--radius) var(--radius) 0;
+  margin: 0 0 18px;
+  max-width: 68ch;
+}
+.aviso p:last-child { margin-bottom: 0; }
+.aviso .rotulo {
+  font-family: var(--mono);
+  font-size: 10px;
+  letter-spacing: .1em;
+  text-transform: uppercase;
+  color: var(--accent);
+  display: block;
+  margin-bottom: 4px;
+}
+.aviso.cuidado { border-color: var(--warn); background: var(--warn-bg); }
+.aviso.cuidado .rotulo { color: var(--warn); }
+.aviso.armadilha { border-color: var(--down); background: var(--down-bg); }
+.aviso.armadilha .rotulo { color: var(--down); }
+
+/* ---------- tabelas ---------- */
+.tabela-rolagem { overflow-x: auto; margin: 0 0 18px; border: 1px solid var(--line); border-radius: var(--radius); }
+table { border-collapse: collapse; width: 100%; font-size: 14.5px; background: var(--surface); }
+th, td { text-align: left; padding: 9px 13px; border-bottom: 1px solid var(--line-soft); vertical-align: top; }
+th {
+  font-family: var(--mono);
+  font-size: 10px;
+  letter-spacing: .09em;
+  text-transform: uppercase;
+  color: var(--ink-faint);
+  font-weight: 500;
+  background: var(--sunken);
+  white-space: nowrap;
+}
+tbody tr:last-child td { border-bottom: none; }
+td code { background: transparent; padding: 0; font-size: .84em; }
+.num { font-variant-numeric: tabular-nums; }
+
+/* verbos HTTP */
+.verbo {
+  font-family: var(--mono);
+  font-size: 10.5px;
+  font-weight: 700;
+  letter-spacing: .05em;
+  padding: 2px 6px;
+  border-radius: 4px;
+  white-space: nowrap;
+}
+.verbo.get    { color: var(--accent); background: var(--accent-bg); }
+.verbo.post   { color: var(--up);     background: var(--up-bg); }
+.verbo.put    { color: var(--warn);   background: var(--warn-bg); }
+.verbo.delete { color: var(--down);   background: var(--down-bg); }
+
+.st { font-family: var(--mono); font-size: 12.5px; font-weight: 500; }
+.st.ok { color: var(--up); }
+.st.ruim { color: var(--down); }
+.st.aviso-cor { color: var(--warn); }
+
+/* ---------- diagrama de camadas ---------- */
+.fluxo {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+  gap: 10px;
+  margin: 0 0 10px;
+}
+.camada {
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  background: var(--surface);
+  padding: 12px 13px;
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+  position: relative;
+}
+.camada .n {
+  font-family: var(--mono);
+  font-size: 10px;
+  letter-spacing: .09em;
+  text-transform: uppercase;
+  color: var(--ink-faint);
+}
+.camada .t {
+  font-family: var(--display);
+  font-weight: 700;
+  font-size: 15px;
+  letter-spacing: -.01em;
+}
+.camada .d { font-size: 13.5px; color: var(--ink-soft); line-height: 1.45; }
+.camada .p { font-family: var(--mono); font-size: 10.5px; color: var(--accent); margin-top: auto; padding-top: 6px; }
+.camada.externa { border-style: dashed; border-color: var(--warn); background: var(--warn-bg); }
+.camada.externa .p { color: var(--warn); }
+
+/* ---------- diagrama entidade-relacionamento ---------- */
+.er { display: flex; flex-direction: column; gap: 0; margin: 0 0 18px; }
+.entidade {
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  background: var(--surface);
+  overflow: hidden;
+  box-shadow: var(--shadow);
+}
+.entidade .cab {
+  display: flex; align-items: baseline; gap: 10px;
+  padding: 9px 14px;
+  background: var(--sunken);
+  border-bottom: 1px solid var(--line-soft);
+}
+.entidade .cab b { font-family: var(--display); font-weight: 700; font-size: 15px; letter-spacing: -.01em; }
+.entidade .cab i {
+  font-style: normal; font-family: var(--mono); font-size: 10px;
+  letter-spacing: .08em; text-transform: uppercase; color: var(--ink-faint);
+  margin-left: auto;
+}
+.entidade ul { list-style: none; margin: 0; padding: 8px 14px 10px; font-family: var(--mono); font-size: 12px; line-height: 1.75; max-width: none; }
+.entidade li { margin: 0; color: var(--ink-soft); }
+.entidade li b { color: var(--ink); font-weight: 700; }
+.entidade li .fk { color: var(--accent); }
+.elo {
+  position: relative;
+  display: flex; align-items: center; gap: 8px; flex-wrap: wrap;
+  padding: 10px 0 10px 30px;
+  font-family: var(--mono); font-size: 11.5px; color: var(--ink-soft);
+}
+.elo::before {
+  content: "";
+  position: absolute;
+  left: 15px; top: 0; bottom: 0;
+  width: 1px;
+  background: var(--line);
+}
+.elo span { border: 1px solid var(--line); background: var(--surface); border-radius: 100px; padding: 2px 9px; }
+
+/* ---------- receitas ---------- */
+.receita {
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  background: var(--surface);
+  padding: 14px 18px 4px;
+  margin: 0 0 12px;
+}
+.receita > h3 { margin-top: 0; font-size: 16px; }
+.receita ol { margin: 0 0 12px; padding-left: 20px; font-size: 15px; }
+
+footer {
+  border-top: 1px solid var(--line);
+  margin-top: 56px;
+  padding-top: 18px;
+  font-size: 13.5px;
+  color: var(--ink-faint);
+  max-width: 68ch;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  * { animation: none !important; transition: none !important; scroll-behavior: auto !important; }
+}
+</style>
+</head>
+<body>
+
+
+<header class="topo">
+  <div class="marca">ApiCripto <span>/ manutenção</span></div>
+  <div class="pilha">
+    <b>.NET 8</b><b>EF Core 8</b><b>SQLite</b><b>Swagger</b><b>Binance API</b>
+  </div>
+</header>
+
+<div class="shell">
+
+  <nav class="sumario" aria-label="Sumário">
+    <h2>Sumário</h2>
+    <ol>
+      <li><a href="#requisitos"><i>1</i><span>O que o projeto entrega</span></a></li>
+      <li><a href="#rodar"><i>2</i><span>Rodar e resetar</span></a></li>
+      <li><a href="#mapa"><i>3</i><span>Mapa dos arquivos</span></a></li>
+      <li><a href="#camadas"><i>4</i><span>As camadas e o fluxo</span></a></li>
+      <li><a href="#dados"><i>5</i><span>Modelo de dados</span></a></li>
+      <li><a href="#filtros"><i>6</i><span>Como os filtros funcionam</span></a></li>
+      <li><a href="#binance"><i>7</i><span>A integração com a Binance</span></a></li>
+      <li><a href="#endpoints"><i>8</i><span>Endpoints e status</span></a></li>
+      <li><a href="#decisoes"><i>9</i><span>Decisões e trade-offs</span></a></li>
+      <li><a href="#receitas"><i>10</i><span>Receitas de manutenção</span></a></li>
+      <li><a href="#armadilhas"><i>11</i><span>Armadilhas conhecidas</span></a></li>
+      <li><a href="#glossario"><i>12</i><span>Glossário</span></a></li>
+    </ol>
+  </nav>
+
+  <main>
+
+    <div class="abertura">
+      <h1>ApiCripto por dentro</h1>
+      <p class="linha-fina">
+        Uma API REST que cadastra <b>corretoras</b> e <b>ativos</b> de criptomoeda e
+        preenche o histórico de <b>cotações</b> com preços reais puxados da API pública
+        da Binance. Este documento é o mapa para mexer no código daqui a seis meses,
+        quando o motivo de cada decisão já tiver saído da cabeça.
+      </p>
+      <dl class="ficha">
+        <div><dt>Entidades</dt><dd>Corretora · Ativo · Cotacao</dd></div>
+        <div><dt>Relações 1-N</dt><dd class="num">2 encadeadas</dd></div>
+        <div><dt>Filtros no Ativo</dt><dd class="num">6 combináveis</dd></div>
+        <div><dt>Banco</dt><dd>SQLite (arquivo local)</dd></div>
+        <div><dt>Fonte externa</dt><dd>Binance <span class="num">/ticker/24hr</span></dd></div>
+      </dl>
+    </div>
+
+    <!-- ================================================================= -->
+    <section id="requisitos">
+      <h2><em>Seção 1</em>O que o projeto entrega</h2>
+
+      <p>
+        O enunciado pedia quatro coisas. Esta tabela é o roteiro de defesa do trabalho:
+        cada requisito com o arquivo exato onde ele está implementado.
+      </p>
+
+      <div class="tabela-rolagem">
+        <table>
+          <thead>
+            <tr><th>Requisito</th><th>Como foi atendido</th><th>Arquivo</th></tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td>Duas ou mais entidades</td>
+              <td>Três: <code>Corretora</code>, <code>Ativo</code>, <code>Cotacao</code></td>
+              <td><code>models/</code></td>
+            </tr>
+            <tr>
+              <td>Relação 1-N entre as entidades</td>
+              <td>Duas, encadeadas: Corretora&nbsp;1-N&nbsp;Ativo e Ativo&nbsp;1-N&nbsp;Cotacao</td>
+              <td><code>infra/AppDbContext.cs</code></td>
+            </tr>
+            <tr>
+              <td>Pelo menos 2 filtros na entidade principal</td>
+              <td>Seis filtros combináveis em <code>Ativo</code>, mais ordenação</td>
+              <td><code>dtos/AtivoFiltro.cs</code><br><code>repositories/AtivoRepository.cs</code></td>
+            </tr>
+            <tr>
+              <td>Banco à escolha do aluno</td>
+              <td>SQLite — arquivo <code>apicripto.db</code>, criado sozinho no primeiro <code>dotnet run</code></td>
+              <td><code>appsettings.json</code></td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+
+      <p>
+        A entidade principal é o <strong>Ativo</strong>: é ela que fica no meio das duas
+        relações (filha de Corretora, mãe de Cotacao) e é sobre ela que os filtros atuam.
+      </p>
+    </section>
+
+    <!-- ================================================================= -->
+    <section id="rodar">
+      <h2><em>Seção 2</em>Rodar e resetar</h2>
+
+      <div class="bloco">
+        <div class="arquivo"><b>terminal</b><span>na pasta ApiCripto/ApiCripto</span></div>
+        <pre>dotnet run
+
+<span class="cm"># abre em http://localhost:5000/swagger</span></pre>
+      </div>
+
+      <p>
+        Não há passo de banco antes do primeiro run. O <code>Program.cs</code> chama
+        <code>Database.Migrate()</code> na subida, que cria o arquivo e aplica as
+        migrations pendentes; em seguida o <code>DbSeeder</code> popula duas corretoras,
+        sete ativos e o histórico inicial. É por isso que a API já sobe demonstrável
+        <strong>mesmo sem internet</strong>.
+      </p>
+
+      <h4>Recomeçar do zero</h4>
+      <div class="bloco">
+        <div class="arquivo"><b>terminal</b><span>apaga o banco; ele renasce no próximo run</span></div>
+        <pre>rm ApiCripto/apicripto.db        <span class="cm"># Linux/macOS</span>
+del ApiCripto\apicripto.db       <span class="cm"># Windows</span></pre>
+      </div>
+
+      <h4>Só quando for criar uma migration nova</h4>
+      <div class="bloco">
+        <div class="arquivo"><b>terminal</b><span>ferramenta global do EF</span></div>
+        <pre>dotnet tool install --global dotnet-ef --version 8.0.11
+dotnet ef migrations add NomeDaMudanca
+dotnet ef database update       <span class="cm"># opcional: o Migrate() da subida já faz isso</span></pre>
+      </div>
+
+      <div class="aviso">
+        <span class="rotulo">Nota</span>
+        <p>
+          Quem só vai <em>rodar</em> o projeto não precisa do <code>dotnet-ef</code>.
+          Ele só é necessário para gerar migrations novas, ou seja, quando você
+          mexer nos <code>models</code>.
+        </p>
+      </div>
+    </section>
+
+    <!-- ================================================================= -->
+    <section id="mapa">
+      <h2><em>Seção 3</em>Mapa dos arquivos</h2>
+
+      <p>
+        A regra para se localizar: <strong>o tipo de mudança determina a pasta</strong>.
+        Se você abriu mais de duas pastas para fazer uma alteração pequena, provavelmente
+        está mexendo no lugar errado.
+      </p>
+
+      <div class="tabela-rolagem">
+        <table>
+          <thead>
+            <tr><th>Pasta</th><th>O que mora ali</th><th>Você mexe aqui quando…</th></tr>
+          </thead>
+          <tbody>
+            <tr><td><code>models/</code></td><td>Corretora, Ativo, Cotacao, TipoAtivo</td><td>…muda o que existe no banco (gera migration)</td></tr>
+            <tr><td><code>dtos/</code></td><td>Contratos de entrada e o <code>AtivoFiltro</code></td><td>…muda o que entra ou sai pela API</td></tr>
+            <tr><td><code>infra/</code></td><td><code>AppDbContext</code> e <code>DbSeeder</code></td><td>…muda relacionamento, índice ou dados iniciais</td></tr>
+            <tr><td><code>repositories/</code></td><td>Consultas EF Core (a única camada que conhece o EF)</td><td>…muda uma consulta ou adiciona um filtro</td></tr>
+            <tr><td><code>services/</code></td><td>Regras de negócio e validações</td><td>…muda uma regra ("não pode apagar se…")</td></tr>
+            <tr><td><code>controllers/</code></td><td>Rotas e status HTTP</td><td>…muda a URL ou o código de resposta</td></tr>
+            <tr><td><code>integracoes/</code></td><td><code>BinanceClient</code> + DTO do JSON externo</td><td>…a Binance muda o contrato dela</td></tr>
+            <tr><td><code>Migrations/</code></td><td>Gerado por <code>dotnet ef</code></td><td>…nunca edite à mão</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </section>
+
+    <!-- ================================================================= -->
+    <section id="camadas">
+      <h2><em>Seção 4</em>As camadas e o fluxo de uma requisição</h2>
+
+      <p>
+        Cada camada só conhece a de baixo, e a conversa acontece sempre por
+        <strong>interface</strong>, nunca por classe concreta. É isso que permite trocar
+        o banco, trocar a corretora ou testar um service sem subir a API inteira.
+      </p>
+
+      <div class="fluxo">
+        <div class="camada">
+          <span class="n">1 · entrada</span>
+          <span class="t">Controller</span>
+          <span class="d">Lê a rota e a query, chama o service, escolhe o status HTTP. Nenhuma regra aqui.</span>
+          <span class="p">controllers/</span>
+        </div>
+        <div class="camada">
+          <span class="n">2 · decisão</span>
+          <span class="t">Service</span>
+          <span class="d">Valida regras de negócio e orquestra. Não conhece HTTP nem EF Core.</span>
+          <span class="p">services/</span>
+        </div>
+        <div class="camada">
+          <span class="n">3 · dados</span>
+          <span class="t">Repository</span>
+          <span class="d">Monta as consultas LINQ e salva. Única camada que enxerga o DbContext.</span>
+          <span class="p">repositories/</span>
+        </div>
+        <div class="camada">
+          <span class="n">4 · persistência</span>
+          <span class="t">EF Core → SQLite</span>
+          <span class="d">Traduz LINQ em SQL e grava no arquivo apicripto.db.</span>
+          <span class="p">infra/AppDbContext.cs</span>
+        </div>
+        <div class="camada externa">
+          <span class="n">lateral · terceiro</span>
+          <span class="t">BinanceClient</span>
+          <span class="d">Só nos endpoints de sincronização: o service chama a Binance por HTTP e traduz o JSON para Cotacao.</span>
+          <span class="p">integracoes/</span>
+        </div>
+      </div>
+
+      <h3>O caminho de <code>GET /api/ativo?corretoraId=1&amp;precoMin=1000</code></h3>
+      <ol class="passos">
+        <li>O ASP.NET mapeia a query string para um objeto <code>AtivoFiltro</code> (graças ao <code>[FromQuery]</code>).</li>
+        <li><code>AtivoController.Listar</code> repassa o filtro para <code>IAtivoService</code>.</li>
+        <li><code>AtivoService</code> não tem regra nesse caminho e delega ao repositório.</li>
+        <li><code>AtivoRepository.ListarAsync</code> encadeia um <code>Where</code> por filtro preenchido e só então executa <code>ToListAsync()</code>.</li>
+        <li>O EF gera <strong>um único SELECT</strong> com todos os WHERE e o JOIN da corretora.</li>
+        <li>O controller devolve <code>200</code> com a lista serializada em JSON.</li>
+      </ol>
+
+      <div class="aviso">
+        <span class="rotulo">Por que tanta camada</span>
+        <p>
+          Em um CRUD pequeno isso parece cerimônia. O retorno aparece na manutenção:
+          trocar SQLite por PostgreSQL mexe em <em>uma linha</em> do <code>Program.cs</code>;
+          trocar a Binance por outra corretora mexe em <em>um arquivo</em> de
+          <code>integracoes/</code>. Sem as camadas, os dois seriam um <em>find &amp; replace</em>
+          no projeto inteiro.
+        </p>
+      </div>
+    </section>
+
+    <!-- ================================================================= -->
+    <section id="dados">
+      <h2><em>Seção 5</em>Modelo de dados</h2>
+
+      <div class="er">
+        <div class="entidade">
+          <div class="cab"><b>Corretora</b><i>cadastro</i></div>
+          <ul>
+            <li><b>Id</b> <span class="fk">PK</span></li>
+            <li>Nome, Site, PaisSede</li>
+            <li>CodigoIntegracao <span class="fk">— "BINANCE" liga a sincronização automática</span></li>
+          </ul>
+        </div>
+        <div class="elo"><span>1</span> possui <span>N</span> · FK <code>Ativo.CorretoraId</code> · <b>Restrict</b></div>
+        <div class="entidade">
+          <div class="cab"><b>Ativo</b><i>entidade principal</i></div>
+          <ul>
+            <li><b>Id</b> <span class="fk">PK</span></li>
+            <li>Simbolo, MoedaBase, MoedaCotacao, Tipo, Monitorado</li>
+            <li>UltimoPreco, Variacao24h, AtualizadoEm <span class="fk">— campos espelho</span></li>
+            <li>CorretoraId <span class="fk">FK</span></li>
+            <li><span class="fk">índice único (CorretoraId, Simbolo)</span></li>
+          </ul>
+        </div>
+        <div class="elo"><span>1</span> possui <span>N</span> · FK <code>Cotacao.AtivoId</code> · <b>Cascade</b></div>
+        <div class="entidade">
+          <div class="cab"><b>Cotacao</b><i>histórico imutável</i></div>
+          <ul>
+            <li><b>Id</b> <span class="fk">PK</span></li>
+            <li>Preco, Variacao24h, PrecoMaximo24h, PrecoMinimo24h, Volume24h</li>
+            <li>CapturadoEm, Fonte <span class="fk">— "Binance" | "Manual" | "Seed"</span></li>
+            <li>AtivoId <span class="fk">FK</span></li>
+          </ul>
+        </div>
+      </div>
+
+      <h3>Por que os dois relacionamentos apagam de formas diferentes</h3>
+      <p>
+        Não é inconsistência, é intenção. <strong>Corretora → Ativo usa Restrict</strong>:
+        apagar uma corretora com ativos destruiria em silêncio todo o histórico de preços,
+        então o banco recusa e o <code>CorretoraService</code> devolve <span class="st ruim">400</span>
+        com o motivo. <strong>Ativo → Cotacao usa Cascade</strong>: uma cotação não significa
+        nada sem o ativo dela, e sobreviver ao pai só produziria linhas órfãs.
+      </p>
+
+      <h3>Os campos espelho do Ativo</h3>
+      <p>
+        <code>UltimoPreco</code>, <code>Variacao24h</code> e <code>AtualizadoEm</code> são uma
+        cópia da última cotação, guardada dentro do Ativo. É <strong>desnormalização
+        proposital</strong>: sem ela, o filtro de faixa de preço teria que rodar sobre um
+        subselect na tabela de cotações em toda listagem.
+      </p>
+      <p>
+        O preço dessa escolha é o risco de os dois divergirem. A defesa é ter
+        <strong>um único ponto de escrita</strong>:
+      </p>
+
+      <div class="bloco">
+        <div class="arquivo"><b>services/CotacaoService.cs</b><span>único lugar que grava Cotacao</span></div>
+        <pre>public async Task&lt;Cotacao&gt; RegistrarAsync(Ativo ativo, Cotacao cotacao)
+{
+    cotacao.AtivoId = ativo.Id;
+    await _repository.AdicionarAsync(cotacao);
+
+    <span class="cm">// só promove a "último preço" se for de fato a mais recente —</span>
+    <span class="cm">// sem isso, importar histórico antigo faria o preço voltar no tempo</span>
+    if (ativo.AtualizadoEm is null || cotacao.CapturadoEm &gt;= ativo.AtualizadoEm)
+    {
+        ativo.UltimoPreco  = cotacao.Preco;
+        ativo.Variacao24h  = cotacao.Variacao24h;
+        ativo.AtualizadoEm = cotacao.CapturadoEm;
+        await _ativoRepository.AtualizarAsync(ativo);
+    }
+
+    return cotacao;
+}</pre>
+      </div>
+
+      <div class="aviso cuidado">
+        <span class="rotulo">Regra de manutenção</span>
+        <p>
+          Toda gravação de cotação — manual, sincronizada ou de um fluxo futuro — passa por
+          <code>RegistrarAsync</code>. No dia em que alguém inserir uma <code>Cotacao</code>
+          direto pelo repositório, o <code>UltimoPreco</code> começa a mentir e os filtros de
+          preço passam a devolver resultado errado sem erro nenhum aparecer.
+        </p>
+      </div>
+    </section>
+
+    <!-- ================================================================= -->
+    <section id="filtros">
+      <h2><em>Seção 6</em>Como os filtros funcionam</h2>
+
+      <p>
+        Os seis filtros são opcionais, combináveis entre si (AND) e chegam pela query string.
+        Nenhum deles filtra em memória: tudo vira <code>WHERE</code> no SQL.
+      </p>
+
+      <div class="tabela-rolagem">
+        <table>
+          <thead><tr><th>Filtro</th><th>Query string</th><th>Vira em SQL</th></tr></thead>
+          <tbody>
+            <tr><td>Por corretora</td><td><code>?corretoraId=1</code></td><td>igualdade na FK</td></tr>
+            <tr><td>Por símbolo (parcial)</td><td><code>?simbolo=btc</code></td><td><code>LIKE '%BTC%'</code></td></tr>
+            <tr><td>Por tipo</td><td><code>?tipo=Stablecoin</code></td><td>igualdade no enum</td></tr>
+            <tr><td>Preço mínimo</td><td><code>?precoMin=1000</code></td><td><code>UltimoPreco &gt;= 1000</code></td></tr>
+            <tr><td>Preço máximo</td><td><code>?precoMax=5000</code></td><td><code>UltimoPreco &lt;= 5000</code></td></tr>
+            <tr><td>Monitorado</td><td><code>?monitorado=true</code></td><td>igualdade no bool</td></tr>
+            <tr><td colspan="3" style="color:var(--ink-faint)">Extras de apresentação: <code>?ordenarPor=preco|variacao|simbolo</code> e <code>?desc=true</code></td></tr>
+          </tbody>
+        </table>
+      </div>
+
+      <div class="bloco">
+        <div class="arquivo"><b>repositories/AtivoRepository.cs</b><span>ListarAsync</span></div>
+        <pre>var query = ComRelacionamento().AsNoTracking();   <span class="cm">// nada foi ao banco ainda</span>
+
+if (filtro.CorretoraId.HasValue)
+    query = query.Where(a =&gt; a.CorretoraId == filtro.CorretoraId.Value);
+
+if (!string.IsNullOrWhiteSpace(filtro.Simbolo))
+{
+    var termo = filtro.Simbolo.Trim().ToUpperInvariant();
+    query = query.Where(a =&gt; a.Simbolo.Contains(termo));
+}
+
+<span class="cm">// ... demais filtros ...</span>
+
+return await query.ToListAsync();                <span class="cm">// AQUI vai UM SELECT ao banco</span></pre>
+      </div>
+
+      <p>
+        O truque é o <code>IQueryable</code>: cada <code>Where</code> só acrescenta um nó na
+        árvore de expressão. A consulta continua sendo montada em memória e só é traduzida
+        para SQL no <code>ToListAsync()</code>. Se em vez disso o código fizesse
+        <code>.ToList()</code> antes dos <code>Where</code>, o banco devolveria a tabela
+        inteira e o filtro aconteceria no C# — funciona com 7 ativos, derruba a aplicação
+        com 700 mil.
+      </p>
+
+      <p>
+        A busca por símbolo é case-insensitive por construção, não por sorte: o
+        <code>AtivoService</code> grava todo símbolo em maiúsculas e o filtro compara com o
+        termo também em maiúsculas. Assim o resultado não depende do
+        <em>collation</em> do banco, que muda entre SQLite e PostgreSQL.
+      </p>
+    </section>
+
+    <!-- ================================================================= -->
+    <section id="binance">
+      <h2><em>Seção 7</em>A integração com a Binance</h2>
+
+      <p>
+        A API consome <code>GET /api/v3/ticker/24hr?symbol=BTCUSDT</code> — endpoint público,
+        sem chave de API. A responsabilidade fica dividida em três peças com fronteiras nítidas:
+      </p>
+
+      <div class="tabela-rolagem">
+        <table>
+          <thead><tr><th>Peça</th><th>Responsabilidade única</th><th>Não sabe</th></tr></thead>
+          <tbody>
+            <tr><td><code>BinanceClient</code></td><td>Falar HTTP com a Binance e traduzir falha em mensagem</td><td>o que é um Ativo</td></tr>
+            <tr><td><code>SincronizacaoService</code></td><td>Decidir o que sincronizar e traduzir o DTO externo em <code>Cotacao</code></td><td>como o HTTP foi feito</td></tr>
+            <tr><td><code>CotacaoService</code></td><td>Gravar e manter os campos espelho consistentes</td><td>que a Binance existe</td></tr>
+          </tbody>
+        </table>
+      </div>
+
+      <h3>Os números chegam como texto</h3>
+      <p>
+        A Binance devolve <code>"lastPrice": "78705.99000000"</code> — string, não número, para
+        não perder precisão em linguagens que só têm <code>double</code>. A conversão acontece
+        num único arquivo e <strong>sempre com <code>InvariantCulture</code></strong>: em uma
+        máquina configurada em pt-BR, o parse padrão leria o ponto como separador de milhar e
+        transformaria 78.705,99 em 7.870.599.
+      </p>
+
+      <div class="bloco">
+        <div class="arquivo"><b>integracoes/BinanceTicker24hDto.cs</b><span>fronteira com o mundo externo</span></div>
+        <pre>private static decimal ParaDecimal(string valor) =&gt;
+    decimal.TryParse(valor, NumberStyles.Any, CultureInfo.InvariantCulture, out var r)
+        ? r
+        : 0m;</pre>
+      </div>
+
+      <h3>Falha de rede não é bug</h3>
+      <p>
+        <code>ObterTicker24hAsync</code> nunca lança exceção para quem chama: devolve
+        <code>(Ticker, Erro)</code>. Um terceiro fora do ar é resultado <em>esperado</em> de uma
+        integração, e cada tipo de falha vira uma mensagem que o usuário da API entende:
+      </p>
+
+      <div class="tabela-rolagem">
+        <table>
+          <thead><tr><th>Situação</th><th>Resposta da API</th><th>Mensagem</th></tr></thead>
+          <tbody>
+            <tr><td>Símbolo que a Binance não conhece</td><td><span class="st ruim">502</span></td><td>"A Binance não reconhece o símbolo 'FAKEUSDT'."</td></tr>
+            <tr><td>Bloqueio por região (HTTP 451)</td><td><span class="st ruim">502</span></td><td>orienta a trocar a <code>BaseUrl</code></td></tr>
+            <tr><td>Limite de requisições (HTTP 429)</td><td><span class="st ruim">502</span></td><td>"tente de novo em alguns segundos"</td></tr>
+            <tr><td>Timeout ou sem rede</td><td><span class="st ruim">502</span></td><td>"não foi possível alcançar a Binance"</td></tr>
+            <tr><td>Corretora sem <code>CodigoIntegracao</code></td><td><span class="st aviso-cor">400</span></td><td>orienta a lançar a cotação manualmente</td></tr>
+            <tr><td>Ativo inexistente</td><td><span class="st aviso-cor">404</span></td><td>"Ativo 999 não encontrado."</td></tr>
+          </tbody>
+        </table>
+      </div>
+
+      <p>
+        <span class="st ruim">502 Bad Gateway</span> é o status certo quando esta API está de pé
+        mas o serviço do qual ela depende falhou. <span class="st ruim">500</span> diria "o bug é
+        meu"; <span class="st aviso-cor">400</span> diria "a culpa é do cliente". A distinção
+        entre os três está toda no <code>switch</code> do <code>SincronizacaoController</code>,
+        alimentado pelo enum <code>StatusSincronizacao</code>.
+      </p>
+
+      <h3>Configuração</h3>
+      <div class="bloco">
+        <div class="arquivo"><b>appsettings.json</b><span></span></div>
+        <pre>"Binance": {
+  "BaseUrl": "https://data-api.binance.vision",
+  "TimeoutSegundos": 15
+}</pre>
+      </div>
+
+      <div class="aviso cuidado">
+        <span class="rotulo">Por que não api.binance.com</span>
+        <p>
+          O host principal da Binance responde <strong>HTTP 451</strong> (bloqueio por região)
+          em várias redes, datacenters e VPNs — inclusive no ambiente onde esta API foi testada.
+          O <code>data-api.binance.vision</code> é o endpoint público oficial de <em>market data</em>:
+          mesmo contrato, sem chave, sem bloqueio geográfico. Se a rede onde o projeto rodar
+          liberar o host principal, é só trocar a <code>BaseUrl</code>.
+        </p>
+      </div>
+
+      <h3>Sincronização em lote é sequencial de propósito</h3>
+      <p>
+        <code>SincronizarTodosAsync</code> percorre os ativos em <code>foreach</code>, um de cada
+        vez. Trocar isso por <code>Task.WhenAll</code> parece uma otimização óbvia e quebra duas
+        coisas ao mesmo tempo: a Binance limita requisições por IP (vira 429) e o
+        <code>DbContext</code> do EF Core <strong>não é thread-safe</strong> — duas gravações
+        concorrentes no mesmo contexto lançam exceção. Se um dia forem milhares de ativos, o
+        caminho é uma fila com <code>BackgroundService</code>, não paralelizar em cima do mesmo
+        contexto.
+      </p>
+      <p>
+        Falha em um símbolo não aborta o lote: cada item entra no relatório com
+        <code>sucesso: false</code> e o motivo, e a resposta é sempre
+        <span class="st ok">200</span> com o resumo.
+      </p>
+    </section>
+
+    <!-- ================================================================= -->
+    <section id="endpoints">
+      <h2><em>Seção 8</em>Endpoints e status</h2>
+
+      <div class="tabela-rolagem">
+        <table>
+          <thead><tr><th>Verbo</th><th>Rota</th><th>O que faz</th><th>Status possíveis</th></tr></thead>
+          <tbody>
+            <tr><td><span class="verbo get">GET</span></td><td><code>/api/corretora</code></td><td>lista corretoras</td><td class="num">200</td></tr>
+            <tr><td><span class="verbo get">GET</span></td><td><code>/api/corretora/{id}</code></td><td>busca por id</td><td class="num">200 · 404</td></tr>
+            <tr><td><span class="verbo post">POST</span></td><td><code>/api/corretora</code></td><td>cadastra</td><td class="num">201 · 400</td></tr>
+            <tr><td><span class="verbo put">PUT</span></td><td><code>/api/corretora/{id}</code></td><td>atualiza</td><td class="num">204 · 404</td></tr>
+            <tr><td><span class="verbo delete">DELETE</span></td><td><code>/api/corretora/{id}</code></td><td>remove (400 se tiver ativos)</td><td class="num">204 · 400 · 404</td></tr>
+
+            <tr><td><span class="verbo get">GET</span></td><td><code>/api/ativo</code></td><td><strong>lista com os 6 filtros</strong></td><td class="num">200</td></tr>
+            <tr><td><span class="verbo get">GET</span></td><td><code>/api/ativo/{id}</code></td><td>busca por id, com a corretora</td><td class="num">200 · 404</td></tr>
+            <tr><td><span class="verbo post">POST</span></td><td><code>/api/ativo</code></td><td>cadastra</td><td class="num">201 · 400</td></tr>
+            <tr><td><span class="verbo put">PUT</span></td><td><code>/api/ativo/{id}</code></td><td>atualiza cadastro (não mexe em preço)</td><td class="num">204 · 400 · 404</td></tr>
+            <tr><td><span class="verbo delete">DELETE</span></td><td><code>/api/ativo/{id}</code></td><td>remove; cotações vão em cascata</td><td class="num">204 · 404</td></tr>
+
+            <tr><td><span class="verbo get">GET</span></td><td><code>/api/ativo/{ativoId}/cotacao</code></td><td>histórico (<code>desde</code>, <code>ate</code>, <code>limite</code>)</td><td class="num">200 · 404</td></tr>
+            <tr><td><span class="verbo get">GET</span></td><td><code>/api/ativo/{ativoId}/cotacao/{id}</code></td><td>uma cotação</td><td class="num">200 · 404</td></tr>
+            <tr><td><span class="verbo post">POST</span></td><td><code>/api/ativo/{ativoId}/cotacao</code></td><td>lançamento manual</td><td class="num">201 · 400 · 404</td></tr>
+            <tr><td><span class="verbo delete">DELETE</span></td><td><code>/api/ativo/{ativoId}/cotacao/{id}</code></td><td>remove do histórico</td><td class="num">204 · 404</td></tr>
+
+            <tr><td><span class="verbo post">POST</span></td><td><code>/api/sincronizacao/ativo/{ativoId}</code></td><td>puxa o preço real de um ativo</td><td class="num">200 · 400 · 404 · 502</td></tr>
+            <tr><td><span class="verbo post">POST</span></td><td><code>/api/sincronizacao</code></td><td>sincroniza todos os monitorados</td><td class="num">200</td></tr>
+          </tbody>
+        </table>
+      </div>
+
+      <p>
+        Três detalhes de contrato que valem a pena notar:
+      </p>
+      <ul>
+        <li>A cotação vive em <strong>rota aninhada</strong> — <code>/api/ativo/3/cotacao</code> —
+          porque ela não existe fora de um ativo, e a URL deve dizer isso.</li>
+        <li>Sincronizar é <span class="verbo post">POST</span>, não GET: cada chamada
+          <em>insere</em> uma linha. GET, por contrato HTTP, não pode ter efeito colateral e
+          pode ser cacheado por qualquer proxy no caminho.</li>
+        <li>Histórico de ativo inexistente devolve <span class="st ruim">404</span>; ativo que
+          existe mas ainda não tem cotação devolve <span class="st ok">200</span> com
+          <code>[]</code>. São situações diferentes e o cliente precisa distinguir.</li>
+      </ul>
+    </section>
+
+    <!-- ================================================================= -->
+    <section id="decisoes">
+      <h2><em>Seção 9</em>Decisões e trade-offs</h2>
+
+      <p>
+        Cada linha aqui é uma escolha que poderia ter sido outra. A coluna da direita é a
+        que importa daqui a seis meses: o sinal de que chegou a hora de mudar.
+      </p>
+
+      <div class="tabela-rolagem">
+        <table>
+          <thead><tr><th>Decisão</th><th>Por quê</th><th>Reveja quando…</th></tr></thead>
+          <tbody>
+            <tr>
+              <td>SQLite em arquivo</td>
+              <td>Zero setup: <code>git clone</code> + <code>dotnet run</code> e funciona na máquina de quem for avaliar</td>
+              <td>…precisar de acesso concorrente de escrita ou de rodar em servidor</td>
+            </tr>
+            <tr>
+              <td><code>Database.Migrate()</code> na subida</td>
+              <td>O banco nasce pronto sem passo manual</td>
+              <td>…for para produção — lá a migration é passo separado do deploy, com backup</td>
+            </tr>
+            <tr>
+              <td>Campos espelho no Ativo</td>
+              <td>Filtro de preço vira <code>WHERE</code> simples e indexável</td>
+              <td>…precisar de mais agregados (média 7d): aí é <em>view</em> ou tabela de resumo</td>
+            </tr>
+            <tr>
+              <td>DTOs só de entrada</td>
+              <td>Impede <em>over-posting</em>: o cliente não consegue mandar Id nem preço</td>
+              <td>…a resposta precisar esconder campos — aí entram DTOs de saída também</td>
+            </tr>
+            <tr>
+              <td><code>[JsonIgnore]</code> em <code>Ativo.Cotacoes</code></td>
+              <td>Histórico cresce sem limite; embutir na listagem faria payloads gigantes</td>
+              <td>…nunca. Se precisar do histórico, use o endpoint dedicado</td>
+            </tr>
+            <tr>
+              <td>Tupla <code>(resultado, erro)</code> nos services</td>
+              <td>Distingue "não achei" (404) de "achei mas não pode" (400) sem exceção de fluxo</td>
+              <td>…os casos passarem de três — aí um <code>Result&lt;T&gt;</code> próprio paga o custo</td>
+            </tr>
+            <tr>
+              <td>Swagger ligado sempre</td>
+              <td>É projeto acadêmico: a banca precisa abrir e testar</td>
+              <td>…for para produção — aí volta para dentro do <code>if (IsDevelopment())</code></td>
+            </tr>
+            <tr>
+              <td>Sem autenticação</td>
+              <td>Fora do escopo do trabalho</td>
+              <td>…qualquer exposição fora do <code>localhost</code></td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </section>
+
+    <!-- ================================================================= -->
+    <section id="receitas">
+      <h2><em>Seção 10</em>Receitas de manutenção</h2>
+
+      <div class="receita">
+        <h3>Adicionar um filtro novo no Ativo</h3>
+        <ol>
+          <li>Crie a propriedade opcional em <code>dtos/AtivoFiltro.cs</code>.</li>
+          <li>Acrescente um <code>if (filtro.X.HasValue)</code> com o <code>Where</code>
+              correspondente em <code>AtivoRepository.ListarAsync</code>.</li>
+          <li>Pronto. Controller, service e Swagger se atualizam sozinhos — o
+              <code>[FromQuery]</code> mapeia a propriedade nova automaticamente.</li>
+        </ol>
+      </div>
+
+      <div class="receita">
+        <h3>Adicionar um campo em uma entidade</h3>
+        <ol>
+          <li>Adicione a propriedade no arquivo de <code>models/</code>.</li>
+          <li>Se ele deve poder ser enviado pelo cliente, adicione também no DTO de entrada
+              e no mapeamento dentro do service.</li>
+          <li><code>dotnet ef migrations add AdicionaCampoX</code> e rode o projeto — o
+              <code>Migrate()</code> aplica na subida.</li>
+          <li>Se o campo for obrigatório e a tabela já tiver linhas, defina um valor padrão
+              na migration, senão o SQLite recusa.</li>
+        </ol>
+      </div>
+
+      <div class="receita">
+        <h3>Plugar uma segunda corretora (ex.: Mercado Bitcoin)</h3>
+        <ol>
+          <li>Crie <code>integracoes/MercadoBitcoinClient.cs</code> com a mesma forma de
+              retorno <code>(Ticker, Erro)</code>.</li>
+          <li>Registre o typed client no <code>Program.cs</code> com
+              <code>AddHttpClient</code>.</li>
+          <li>No <code>SincronizacaoService</code>, escolha o cliente pelo
+              <code>Corretora.CodigoIntegracao</code> — hoje há uma constante
+              <code>"BINANCE"</code>; com dois ou mais, o padrão indicado é um
+              <em>dicionário</em> de <code>codigo → cliente</code> injetado.</li>
+          <li>Cadastre a corretora com o <code>CodigoIntegracao</code> novo. Nenhuma outra
+              camada muda.</li>
+        </ol>
+      </div>
+
+      <div class="receita">
+        <h3>Migrar de SQLite para PostgreSQL</h3>
+        <ol>
+          <li><code>dotnet add package Npgsql.EntityFrameworkCore.PostgreSQL</code>.</li>
+          <li>No <code>Program.cs</code>, troque <code>UseSqlite</code> por
+              <code>UseNpgsql</code>.</li>
+          <li>Troque a connection string em <code>appsettings.json</code>.</li>
+          <li><strong>Apague o bloco <code>if (Database.IsSqlite())</code></strong> do
+              <code>AppDbContext</code>: no Postgres <code>decimal</code> é nativo e a
+              conversão para <code>double</code> só faria perder precisão.</li>
+          <li>Apague a pasta <code>Migrations/</code> e gere de novo — migrations são
+              específicas do provedor.</li>
+        </ol>
+      </div>
+
+      <div class="receita">
+        <h3>Atualizar preços sozinho, sem chamar o endpoint</h3>
+        <ol>
+          <li>Crie uma classe herdando de <code>BackgroundService</code>.</li>
+          <li>Dentro do <code>ExecuteAsync</code>, abra um <code>IServiceScope</code> a cada
+              ciclo — o <code>ISincronizacaoService</code> é <em>Scoped</em> e não pode ser
+              injetado direto num serviço <em>Singleton</em>.</li>
+          <li>Registre com <code>builder.Services.AddHostedService&lt;...&gt;()</code> e deixe o
+              intervalo no <code>appsettings.json</code>.</li>
+        </ol>
+      </div>
+    </section>
+
+    <!-- ================================================================= -->
+    <section id="armadilhas">
+      <h2><em>Seção 11</em>Armadilhas conhecidas</h2>
+
+      <div class="aviso armadilha">
+        <span class="rotulo">1 · decimal no SQLite</span>
+        <p>
+          O SQLite não tem tipo <code>decimal</code>: ele guarda como TEXT, e comparação de
+          texto colocaria <code>"9" &gt; "10"</code>. Sem o conversor para <code>double</code>
+          no <code>AppDbContext</code>, os filtros <code>precoMin</code>/<code>precoMax</code>
+          devolveriam resultado errado — e o EF só emite um <em>warning</em>, não um erro.
+        </p>
+      </div>
+
+      <div class="aviso armadilha">
+        <span class="rotulo">2 · Update() em objeto já rastreado</span>
+        <p>
+          Chamar <code>_context.Ativos.Update(ativo)</code> num objeto que veio de uma consulta
+          da mesma requisição marca o grafo inteiro como alterado — inclusive a
+          <code>Corretora</code> carregada pelo <code>Include</code> — e gera UPDATEs
+          desnecessários. Por isso os repositórios só chamam <code>Update</code> quando o
+          objeto está <code>Detached</code>.
+        </p>
+      </div>
+
+      <div class="aviso armadilha">
+        <span class="rotulo">3 · DbContext não é thread-safe</span>
+        <p>
+          Vale para qualquer tentação de paralelizar: <code>Task.WhenAll</code> sobre operações
+          que compartilham o mesmo <code>DbContext</code> lança
+          <code>InvalidOperationException</code> em produção e passa despercebido em teste
+          pequeno.
+        </p>
+      </div>
+
+      <div class="aviso armadilha">
+        <span class="rotulo">4 · HTTP 451 da Binance</span>
+        <p>
+          Se a sincronização começar a devolver <span class="st ruim">502</span> com mensagem
+          de bloqueio por região, não é bug no código: é a rede. Confira a
+          <code>Binance:BaseUrl</code> no <code>appsettings.json</code>.
+        </p>
+      </div>
+
+      <div class="aviso armadilha">
+        <span class="rotulo">5 · O seed só roda uma vez</span>
+        <p>
+          <code>DbSeeder.Seed</code> começa com <code>if (context.Corretoras.Any()) return;</code>.
+          Mudar os dados iniciais não tem efeito nenhum enquanto o <code>apicripto.db</code>
+          existir — apague o arquivo para ver a mudança.
+        </p>
+      </div>
+    </section>
+
+    <!-- ================================================================= -->
+    <section id="glossario">
+      <h2><em>Seção 12</em>Glossário</h2>
+
+      <div class="tabela-rolagem">
+        <table>
+          <thead><tr><th>Termo</th><th>O que significa aqui</th></tr></thead>
+          <tbody>
+            <tr><td><strong>Símbolo / par</strong></td><td><code>BTCUSDT</code> = comprar BTC pagando em USDT. As duas moedas ficam separadas em <code>MoedaBase</code> e <code>MoedaCotacao</code>.</td></tr>
+            <tr><td><strong>Ticker 24h</strong></td><td>Resumo das últimas 24 horas de um par: último preço, máxima, mínima, variação e volume.</td></tr>
+            <tr><td><strong>quoteVolume</strong></td><td>Volume negociado expresso na moeda de cotação (em USDT, não em BTC). É o que vai para <code>Volume24h</code>.</td></tr>
+            <tr><td><strong>Stablecoin</strong></td><td>Cripto atrelada a uma moeda tradicional (USDC ≈ US$ 1). Por isso ela existe como <code>TipoAtivo</code> separado — o filtro por tipo fica útil.</td></tr>
+            <tr><td><strong>Campo espelho</strong></td><td>Cópia de um dado que "mora" em outra tabela, guardada por performance. Aqui: <code>UltimoPreco</code> no Ativo.</td></tr>
+            <tr><td><strong>Typed client</strong></td><td><code>HttpClient</code> registrado por <code>AddHttpClient</code> e injetado numa classe. Evita o clássico esgotamento de sockets do <code>new HttpClient()</code>.</td></tr>
+            <tr><td><strong>Over-posting</strong></td><td>Cliente enviar campos que não deveria poder escrever (Id, preço). Os DTOs de entrada existem para bloquear isso.</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </section>
+
+    <footer>
+      ApiCripto · Devs2Blu · ASP.NET Core 8 + EF Core 8 + SQLite ·
+      dados de mercado da API pública da Binance
+      (<code>data-api.binance.vision</code>).
+      A documentação interativa dos endpoints fica em <code>/swagger</code> com o projeto rodando.
+    </footer>
+
+  </main>
+</div>
+
+</body>
+</html>

@@ -1,0 +1,136 @@
+### Arquivo de testes rápidos (Visual Studio / Rider / extensão REST Client do VS Code).
+### Clique em "Send Request" acima de cada bloco.
+
+@host = http://localhost:5000
+
+###############################################################################
+# CORRETORAS
+###############################################################################
+
+### Listar corretoras
+GET {{host}}/api/corretora
+Accept: application/json
+
+### Buscar corretora por Id
+GET {{host}}/api/corretora/1
+Accept: application/json
+
+### Criar corretora (CodigoIntegracao = "BINANCE" habilita sincronização automática)
+POST {{host}}/api/corretora
+Content-Type: application/json
+
+{
+  "nome": "Kraken",
+  "site": "https://www.kraken.com",
+  "paisSede": "Estados Unidos",
+  "codigoIntegracao": null
+}
+
+### Atualizar corretora
+PUT {{host}}/api/corretora/2
+Content-Type: application/json
+
+{
+  "nome": "Mercado Bitcoin",
+  "site": "https://www.mercadobitcoin.com.br",
+  "paisSede": "Brasil",
+  "codigoIntegracao": null
+}
+
+### Remover corretora — 400 se ela ainda tiver ativos
+DELETE {{host}}/api/corretora/1
+
+###############################################################################
+# ATIVOS (entidade principal) — FILTROS
+###############################################################################
+
+### Sem filtro
+GET {{host}}/api/ativo
+
+### Filtro 1 — por corretora
+GET {{host}}/api/ativo?corretoraId=1
+
+### Filtro 2 — por símbolo (busca parcial, case-insensitive)
+GET {{host}}/api/ativo?simbolo=btc
+
+### Filtro 3 — por tipo
+GET {{host}}/api/ativo?tipo=Stablecoin
+
+### Filtro 4 e 5 — faixa de preço
+GET {{host}}/api/ativo?precoMin=100&precoMax=5000
+
+### Filtro 6 — só os monitorados
+GET {{host}}/api/ativo?monitorado=true
+
+### Combinando filtros + ordenação
+GET {{host}}/api/ativo?corretoraId=1&tipo=Cripto&precoMin=1000&ordenarPor=preco&desc=true
+
+### Buscar por Id
+GET {{host}}/api/ativo/1
+
+### Criar ativo
+POST {{host}}/api/ativo
+Content-Type: application/json
+
+{
+  "simbolo": "XRPUSDT",
+  "moedaBase": "XRP",
+  "moedaCotacao": "USDT",
+  "tipo": "Cripto",
+  "monitorado": true,
+  "corretoraId": 1
+}
+
+### Atualizar ativo (não mexe em preço)
+PUT {{host}}/api/ativo/1
+Content-Type: application/json
+
+{
+  "simbolo": "BTCUSDT",
+  "moedaBase": "BTC",
+  "moedaCotacao": "USDT",
+  "tipo": "Cripto",
+  "monitorado": true,
+  "corretoraId": 1
+}
+
+### Remover ativo (apaga o histórico de cotações em cascata)
+DELETE {{host}}/api/ativo/9
+
+###############################################################################
+# COTAÇÕES (rota aninhada no ativo)
+###############################################################################
+
+### Histórico do ativo
+GET {{host}}/api/ativo/1/cotacao?limite=10
+
+### Histórico com recorte por data
+GET {{host}}/api/ativo/1/cotacao?desde=2026-01-01&limite=50
+
+### Uma cotação específica
+GET {{host}}/api/ativo/1/cotacao/1
+
+### Lançar cotação manualmente (corretora sem integração)
+POST {{host}}/api/ativo/7/cotacao
+Content-Type: application/json
+
+{
+  "preco": 12500.50,
+  "variacao24h": 1.25,
+  "precoMaximo24h": 12800.00,
+  "precoMinimo24h": 12100.00,
+  "volume24h": 98000.00
+}
+
+### Remover cotação
+DELETE {{host}}/api/ativo/1/cotacao/1
+
+###############################################################################
+# SINCRONIZAÇÃO COM A BINANCE
+###############################################################################
+
+### Sincronizar UM ativo (busca o preço real e grava)
+POST {{host}}/api/sincronizacao/ativo/1
+
+### Sincronizar TODOS os ativos monitorados de corretoras integradas
+POST {{host}}/api/sincronizacao
