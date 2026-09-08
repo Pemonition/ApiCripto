@@ -1,0 +1,933 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Manual da ApiCripto</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:wght@500;700;800&family=Newsreader:ital,wght@0,400;0,500;0,600;1,400&family=JetBrains+Mono:wght@400;500;700&display=swap">
+
+<style>
+/* ===========================================================================
+   Mesmos tokens de "ApiCripto por dentro" — os dois documentos são um par.
+   :root define a paleta CLARA completa; os blocos abaixo redefinem SÓ tokens.
+   =========================================================================== */
+:root {
+  --bg:        #F3F4F7;
+  --surface:   #FFFFFF;
+  --sunken:    #E7E9EF;
+  --line:      #D2D6E0;
+  --line-soft: #E2E5EC;
+  --ink:       #141821;
+  --ink-soft:  #4B5262;
+  --ink-faint: #7B8394;
+
+  --accent:    #2C4A73;
+  --accent-bg: #E4EAF3;
+  --up:        #0F7B5F;
+  --up-bg:     #DFF0E9;
+  --down:      #B03A32;
+  --down-bg:   #F7E3E1;
+  --warn:      #8A5D0C;
+  --warn-bg:   #F6EBD6;
+
+  --display: "Bricolage Grotesque", "Helvetica Neue", Arial, sans-serif;
+  --body:    "Newsreader", Georgia, "Times New Roman", serif;
+  --mono:    "JetBrains Mono", ui-monospace, "SF Mono", Menlo, Consolas, monospace;
+
+  --radius: 6px;
+  --shadow: 0 1px 2px rgba(20, 24, 33, .06), 0 8px 24px -18px rgba(20, 24, 33, .35);
+}
+
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg:        #111520;
+    --surface:   #171C29;
+    --sunken:    #1E2432;
+    --line:      #2C3446;
+    --line-soft: #232A3A;
+    --ink:       #E6E9F0;
+    --ink-soft:  #A6AEC0;
+    --ink-faint: #727B8E;
+
+    --accent:    #8FB3E0;
+    --accent-bg: #1C2739;
+    --up:        #4FD1A5;
+    --up-bg:     #12291F;
+    --down:      #F08A80;
+    --down-bg:   #2E1B19;
+    --warn:      #E0B252;
+    --warn-bg:   #2B2213;
+
+    --shadow: 0 1px 2px rgba(0,0,0,.4), 0 8px 24px -18px rgba(0,0,0,.9);
+  }
+}
+
+:root[data-theme="dark"] {
+  --bg:        #111520;
+  --surface:   #171C29;
+  --sunken:    #1E2432;
+  --line:      #2C3446;
+  --line-soft: #232A3A;
+  --ink:       #E6E9F0;
+  --ink-soft:  #A6AEC0;
+  --ink-faint: #727B8E;
+
+  --accent:    #8FB3E0;
+  --accent-bg: #1C2739;
+  --up:        #4FD1A5;
+  --up-bg:     #12291F;
+  --down:      #F08A80;
+  --down-bg:   #2E1B19;
+  --warn:      #E0B252;
+  --warn-bg:   #2B2213;
+
+  --shadow: 0 1px 2px rgba(0,0,0,.4), 0 8px 24px -18px rgba(0,0,0,.9);
+}
+
+* { box-sizing: border-box; }
+
+body {
+  margin: 0;
+  background: var(--bg);
+  color: var(--ink);
+  font-family: var(--body);
+  font-size: 17px;
+  line-height: 1.65;
+  -webkit-font-smoothing: antialiased;
+}
+
+a { color: var(--accent); text-decoration-thickness: 1px; text-underline-offset: 2px; }
+a:focus-visible, .sumario a:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+  border-radius: 3px;
+}
+
+/* ---------- topo ---------- */
+.topo {
+  position: sticky; top: 0; z-index: 20;
+  display: flex; align-items: center; gap: 14px; flex-wrap: wrap;
+  padding: 10px 28px;
+  background: color-mix(in srgb, var(--bg) 88%, transparent);
+  backdrop-filter: blur(8px);
+  border-bottom: 1px solid var(--line);
+}
+.topo .marca {
+  font-family: var(--display);
+  font-weight: 800;
+  font-size: 15px;
+  letter-spacing: -.01em;
+}
+.topo .marca span { color: var(--accent); }
+.pilha {
+  display: flex; gap: 6px; flex-wrap: wrap;
+  margin-left: auto;
+  font-family: var(--mono);
+  font-size: 10.5px;
+  letter-spacing: .04em;
+  text-transform: uppercase;
+  color: var(--ink-faint);
+}
+.pilha b {
+  font-weight: 500;
+  padding: 3px 7px;
+  border: 1px solid var(--line);
+  border-radius: 100px;
+  background: var(--surface);
+}
+
+/* ---------- shell ---------- */
+.shell {
+  display: grid;
+  grid-template-columns: 250px minmax(0, 1fr);
+  gap: 48px;
+  max-width: 1180px;
+  margin: 0 auto;
+  padding: 40px 28px 120px;
+  align-items: start;
+}
+@media (max-width: 940px) {
+  .shell { grid-template-columns: minmax(0, 1fr); gap: 28px; padding-top: 28px; }
+}
+
+/* ---------- sumário ---------- */
+.sumario { position: sticky; top: 74px; }
+@media (max-width: 940px) {
+  .sumario {
+    position: static;
+    border: 1px solid var(--line);
+    border-radius: var(--radius);
+    background: var(--surface);
+    padding: 16px 18px;
+  }
+}
+.sumario h2 {
+  font-family: var(--mono);
+  font-size: 10.5px;
+  letter-spacing: .1em;
+  text-transform: uppercase;
+  color: var(--ink-faint);
+  margin: 0 0 10px;
+  font-weight: 500;
+}
+.sumario ol { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 1px; }
+.sumario a {
+  display: grid;
+  grid-template-columns: 22px 1fr;
+  gap: 6px;
+  padding: 5px 8px;
+  border-radius: 5px;
+  font-family: var(--display);
+  font-size: 13.5px;
+  font-weight: 500;
+  line-height: 1.35;
+  color: var(--ink-soft);
+  text-decoration: none;
+}
+.sumario a:hover { background: var(--sunken); color: var(--ink); }
+.sumario a i {
+  font-style: normal;
+  font-family: var(--mono);
+  font-size: 11px;
+  color: var(--ink-faint);
+}
+
+/* ---------- abertura ---------- */
+.abertura { margin-bottom: 12px; }
+.abertura h1 {
+  font-family: var(--display);
+  font-weight: 800;
+  font-size: clamp(34px, 5.2vw, 52px);
+  line-height: 1.02;
+  letter-spacing: -.03em;
+  margin: 0 0 14px;
+  text-wrap: balance;
+}
+.abertura .linha-fina {
+  font-size: 19px;
+  color: var(--ink-soft);
+  margin: 0 0 26px;
+  max-width: 62ch;
+}
+.abertura .linha-fina b { color: var(--ink); font-weight: 600; }
+
+.ficha {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+  gap: 1px;
+  background: var(--line);
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  overflow: hidden;
+  margin: 0;
+}
+.ficha div { background: var(--surface); padding: 12px 14px; }
+.ficha dt {
+  font-family: var(--mono);
+  font-size: 10px;
+  letter-spacing: .09em;
+  text-transform: uppercase;
+  color: var(--ink-faint);
+  margin-bottom: 4px;
+}
+.ficha dd {
+  margin: 0;
+  font-family: var(--display);
+  font-weight: 600;
+  font-size: 15px;
+  letter-spacing: -.01em;
+  word-break: break-word;
+}
+
+/* ---------- seções ---------- */
+section { padding-top: 46px; scroll-margin-top: 70px; }
+section > h2 {
+  font-family: var(--display);
+  font-weight: 700;
+  font-size: 27px;
+  letter-spacing: -.022em;
+  line-height: 1.15;
+  margin: 0 0 6px;
+  padding-top: 14px;
+  border-top: 1px solid var(--line);
+  text-wrap: balance;
+}
+section > h2 em {
+  font-style: normal;
+  font-family: var(--mono);
+  font-size: 12px;
+  font-weight: 500;
+  color: var(--accent);
+  display: block;
+  margin-bottom: 8px;
+  letter-spacing: .06em;
+}
+h3 {
+  font-family: var(--display);
+  font-weight: 700;
+  font-size: 17.5px;
+  letter-spacing: -.01em;
+  margin: 30px 0 8px;
+  text-wrap: balance;
+}
+h4 {
+  font-family: var(--mono);
+  font-weight: 500;
+  font-size: 11px;
+  letter-spacing: .09em;
+  text-transform: uppercase;
+  color: var(--ink-faint);
+  margin: 24px 0 8px;
+}
+p { margin: 0 0 14px; max-width: 68ch; }
+ul { max-width: 68ch; padding-left: 20px; margin: 0 0 14px; }
+li { margin-bottom: 6px; }
+strong { font-weight: 600; }
+code {
+  font-family: var(--mono);
+  font-size: .82em;
+  background: var(--sunken);
+  padding: 1px 5px;
+  border-radius: 4px;
+  word-break: break-word;
+}
+
+/* ---------- blocos de código ---------- */
+.bloco {
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  overflow: hidden;
+  margin: 0 0 18px;
+  background: var(--surface);
+}
+.bloco .arquivo {
+  font-family: var(--mono);
+  font-size: 10.5px;
+  letter-spacing: .05em;
+  color: var(--ink-faint);
+  padding: 7px 12px;
+  border-bottom: 1px solid var(--line-soft);
+  background: var(--sunken);
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+}
+.bloco .arquivo b { font-weight: 500; color: var(--ink-soft); }
+.bloco pre {
+  margin: 0;
+  padding: 14px 16px;
+  overflow-x: auto;
+  font-family: var(--mono);
+  font-size: 12.5px;
+  line-height: 1.62;
+  color: var(--ink);
+}
+.bloco pre .cm { color: var(--ink-faint); }
+.bloco pre .kw { color: var(--accent); }
+
+/* par requisição / resposta lado a lado */
+.par {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+  gap: 14px;
+  margin: 0 0 18px;
+}
+.par .bloco { margin: 0; }
+
+/* ---------- callouts ---------- */
+.aviso {
+  border-left: 3px solid var(--accent);
+  background: var(--accent-bg);
+  padding: 12px 16px;
+  border-radius: 0 var(--radius) var(--radius) 0;
+  margin: 0 0 18px;
+  max-width: 68ch;
+}
+.aviso p:last-child { margin-bottom: 0; }
+.aviso .rotulo {
+  font-family: var(--mono);
+  font-size: 10px;
+  letter-spacing: .1em;
+  text-transform: uppercase;
+  color: var(--accent);
+  display: block;
+  margin-bottom: 4px;
+}
+.aviso.cuidado { border-color: var(--warn); background: var(--warn-bg); }
+.aviso.cuidado .rotulo { color: var(--warn); }
+.aviso.armadilha { border-color: var(--down); background: var(--down-bg); }
+.aviso.armadilha .rotulo { color: var(--down); }
+
+/* ---------- tabelas ---------- */
+.tabela-rolagem { overflow-x: auto; margin: 0 0 18px; border: 1px solid var(--line); border-radius: var(--radius); }
+table { border-collapse: collapse; width: 100%; font-size: 14.5px; background: var(--surface); }
+th, td { text-align: left; padding: 9px 13px; border-bottom: 1px solid var(--line-soft); vertical-align: top; }
+th {
+  font-family: var(--mono);
+  font-size: 10px;
+  letter-spacing: .09em;
+  text-transform: uppercase;
+  color: var(--ink-faint);
+  font-weight: 500;
+  background: var(--sunken);
+  white-space: nowrap;
+}
+tbody tr:last-child td { border-bottom: none; }
+td code { background: transparent; padding: 0; font-size: .84em; }
+.num { font-variant-numeric: tabular-nums; }
+
+/* verbos HTTP */
+.verbo {
+  font-family: var(--mono);
+  font-size: 10.5px;
+  font-weight: 700;
+  letter-spacing: .05em;
+  padding: 2px 6px;
+  border-radius: 4px;
+  white-space: nowrap;
+}
+.verbo.get    { color: var(--accent); background: var(--accent-bg); }
+.verbo.post   { color: var(--up);     background: var(--up-bg); }
+.verbo.put    { color: var(--warn);   background: var(--warn-bg); }
+.verbo.delete { color: var(--down);   background: var(--down-bg); }
+
+.st { font-family: var(--mono); font-size: 12.5px; font-weight: 500; }
+.st.ok { color: var(--up); }
+.st.ruim { color: var(--down); }
+.st.aviso-cor { color: var(--warn); }
+
+/* ---------- o caminho do dado (3 conceitos) ---------- */
+.fluxo {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+  gap: 10px;
+  margin: 0 0 18px;
+}
+.camada {
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  background: var(--surface);
+  padding: 12px 13px;
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+}
+.camada .n {
+  font-family: var(--mono);
+  font-size: 10px;
+  letter-spacing: .09em;
+  text-transform: uppercase;
+  color: var(--ink-faint);
+}
+.camada .t {
+  font-family: var(--display);
+  font-weight: 700;
+  font-size: 15px;
+  letter-spacing: -.01em;
+}
+.camada .d { font-size: 13.5px; color: var(--ink-soft); line-height: 1.45; }
+.camada .p { font-family: var(--mono); font-size: 10.5px; color: var(--accent); margin-top: auto; padding-top: 6px; }
+.camada.externa { border-style: dashed; border-color: var(--warn); background: var(--warn-bg); }
+.camada.externa .p { color: var(--warn); }
+
+/* ---------- passos do fluxo de uso ---------- */
+.passo {
+  display: grid;
+  grid-template-columns: 34px minmax(0, 1fr);
+  gap: 16px;
+  padding: 22px 0 4px;
+  border-top: 1px solid var(--line-soft);
+}
+.passo:first-of-type { border-top: none; }
+.passo > .marcador {
+  font-family: var(--mono);
+  font-size: 12px;
+  font-weight: 700;
+  color: var(--accent);
+  background: var(--accent-bg);
+  border-radius: 100px;
+  width: 34px; height: 34px;
+  display: flex; align-items: center; justify-content: center;
+  margin-top: 4px;
+}
+.passo > div h3 { margin-top: 0; }
+.passo > div > *:last-child { margin-bottom: 0; }
+
+/* ---------- linha de endpoint ---------- */
+.rota {
+  display: flex; align-items: baseline; gap: 9px; flex-wrap: wrap;
+  font-family: var(--mono);
+  font-size: 13px;
+  padding: 8px 0 2px;
+}
+.rota .caminho { font-weight: 500; word-break: break-all; }
+.rota .nota { color: var(--ink-faint); font-size: 11.5px; }
+</style>
+</head>
+<body>
+
+<header class="topo">
+  <div class="marca">ApiCripto <span>/ manual de uso</span></div>
+  <div class="pilha">
+    <b>http://localhost:5000</b>
+    <b>JSON</b>
+    <b>sem autenticação</b>
+  </div>
+</header>
+
+<div class="shell">
+
+  <nav class="sumario" aria-label="Sumário">
+    <h2>Neste manual</h2>
+    <ol>
+      <li><a href="#conceitos"><i>1</i><span>Os três conceitos</span></a></li>
+      <li><a href="#subir"><i>2</i><span>Subir a API</span></a></li>
+      <li><a href="#fluxo"><i>3</i><span>Do zero ao primeiro preço</span></a></li>
+      <li><a href="#endpoints"><i>4</i><span>Todos os endpoints</span></a></li>
+      <li><a href="#filtros"><i>5</i><span>Os filtros de ativo</span></a></li>
+      <li><a href="#erros"><i>6</i><span>Quando dá erro</span></a></li>
+      <li><a href="#conta"><i>7</i><span>Conectar sua conta</span></a></li>
+    </ol>
+  </nav>
+
+  <main>
+
+    <div class="abertura">
+      <h1>Manual da ApiCripto</h1>
+      <p class="linha-fina">Como cadastrar uma corretora, colocar ativos nela e trazer
+        preço real do mercado — <b>na ordem em que a API espera</b>. O documento irmão,
+        <i>ApiCripto por dentro</i>, explica como ela foi construída; este aqui explica como se usa.</p>
+      <dl class="ficha">
+        <div><dt>Base URL</dt><dd>localhost:5000</dd></div>
+        <div><dt>Documentação viva</dt><dd>/swagger</dd></div>
+        <div><dt>Autenticação</dt><dd>Nenhuma</dd></div>
+        <div><dt>Fonte de preço</dt><dd>Binance pública</dd></div>
+      </dl>
+    </div>
+
+    <section id="conceitos">
+      <h2><em>01 — modelo</em>Os três conceitos</h2>
+      <p>Tudo na API gira em torno de três coisas encaixadas uma dentro da outra. Entender
+        essa ordem evita 90% dos erros de uso, porque a API recusa qualquer tentativa de
+        pular etapa.</p>
+
+      <div class="fluxo">
+        <div class="camada">
+          <div class="n">Primeiro</div>
+          <div class="t">Corretora</div>
+          <div class="d">Onde o ativo é negociado. Binance, Mercado Bitcoin, Foxbit.</div>
+          <div class="p">/api/corretora</div>
+        </div>
+        <div class="camada">
+          <div class="n">Depois</div>
+          <div class="t">Ativo</div>
+          <div class="d">Um par negociado <em>dentro</em> de uma corretora: BTCUSDT, ETHBRL.</div>
+          <div class="p">/api/ativo</div>
+        </div>
+        <div class="camada">
+          <div class="n">Por fim</div>
+          <div class="t">Cotação</div>
+          <div class="d">O preço do ativo num instante. Vira histórico — nunca é sobrescrita.</div>
+          <div class="p">/api/ativo/{id}/cotacao</div>
+        </div>
+      </div>
+
+      <p>O mesmo símbolo pode existir em duas corretoras (BTCUSDT na Binance e na Foxbit são
+        registros diferentes, com preços diferentes), mas não pode aparecer duas vezes na
+        mesma. Cada ativo carrega ainda o <strong>último preço</strong> como campo próprio,
+        atualizado toda vez que uma cotação nova entra — é isso que faz o filtro de faixa de
+        preço responder rápido.</p>
+
+      <div class="aviso">
+        <span class="rotulo">O campo que decide tudo</span>
+        <p>A corretora tem um campo <code>codigoIntegracao</code>. Com o valor
+          <code>"BINANCE"</code>, os ativos dela podem buscar preço sozinhos. Com
+          <code>null</code>, a corretora existe normalmente, mas o preço dos ativos dela
+          só entra na mão. É o interruptor entre "sincroniza" e "lançamento manual".</p>
+      </div>
+    </section>
+
+    <section id="subir">
+      <h2><em>02 — execução</em>Subir a API</h2>
+      <p>Pelo terminal, de dentro da pasta do projeto:</p>
+
+      <div class="bloco">
+        <div class="arquivo"><b>terminal</b><span>ApiCripto/ApiCripto</span></div>
+<pre><span class="cm"># o banco e os dados de exemplo são criados no primeiro run</span>
+dotnet run --launch-profile http</pre>
+      </div>
+
+      <p>Pelo Rider ou Visual Studio: abra <code>ApiCripto.sln</code>, escolha o perfil
+        <strong>http</strong> e rode. O navegador abre no Swagger sozinho.</p>
+
+      <p>Na primeira execução a API cria o arquivo <code>apicripto.db</code>, aplica a
+        migration e insere dados de exemplo: 2 corretoras e 7 ativos. Nas próximas, o
+        seeder vê que já tem gente lá dentro e não faz nada. Para voltar ao estado inicial,
+        pare a API, apague o <code>.db</code> e rode de novo.</p>
+
+      <h3>Três formas de conversar com ela</h3>
+      <ul>
+        <li><strong>Swagger</strong> em <code>/swagger</code> — lista todos os endpoints com
+          formulário pronto. A raiz redireciona para lá.</li>
+        <li><strong>Arquivo <code>ApiCripto.http</code></strong> — 33 requisições na ordem
+          deste manual, com "Send Request" acima de cada uma. Funciona no Rider, no Visual
+          Studio e no VS Code com a extensão REST Client.</li>
+        <li><strong>curl, Postman, Insomnia</strong> — é uma API REST comum, sem chave e sem
+          cabeçalho especial.</li>
+      </ul>
+    </section>
+
+    <section id="fluxo">
+      <h2><em>03 — passo a passo</em>Do zero ao primeiro preço</h2>
+      <p>A sequência abaixo é a mesma que a API exige internamente: cada passo depende do
+        anterior ter acontecido. Se você tentar o passo 2 sem o 1, recebe
+        <span class="st ruim">400</span> dizendo qual corretora não existe.</p>
+
+      <div class="passo">
+        <div class="marcador">1</div>
+        <div>
+          <h3>Cadastrar a corretora</h3>
+          <p>Só <code>nome</code> é obrigatório. Preencha <code>codigoIntegracao</code> com
+            <code>"BINANCE"</code> se quiser que os ativos dela busquem preço sozinhos.</p>
+          <div class="par">
+            <div class="bloco">
+              <div class="arquivo"><b>POST</b><span>/api/corretora</span></div>
+<pre>{
+  <span class="kw">"nome"</span>: "Binance",
+  <span class="kw">"site"</span>: "https://www.binance.com",
+  <span class="kw">"paisSede"</span>: "Malta",
+  <span class="kw">"codigoIntegracao"</span>: "BINANCE"
+}</pre>
+            </div>
+            <div class="bloco">
+              <div class="arquivo"><b>201 Created</b><span>guarde o id</span></div>
+<pre>{
+  <span class="kw">"id"</span>: 1,
+  <span class="kw">"nome"</span>: "Binance",
+  <span class="kw">"site"</span>: "https://www.binance.com",
+  <span class="kw">"paisSede"</span>: "Malta",
+  <span class="kw">"codigoIntegracao"</span>: "BINANCE"
+}</pre>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="passo">
+        <div class="marcador">2</div>
+        <div>
+          <h3>Cadastrar o ativo dentro dela</h3>
+          <p>O <code>simbolo</code> precisa ser exatamente o par como a corretora o chama —
+            <code>BTCUSDT</code>, não <code>BTC/USDT</code> nem <code>bitcoin</code>. É essa
+            string que vai ser mandada para a Binance na hora de sincronizar.
+            O <code>tipo</code> aceita <code>Cripto</code>, <code>Stablecoin</code> ou
+            <code>Token</code>, e <code>monitorado</code> diz se ele entra na sincronização
+            em lote.</p>
+          <div class="par">
+            <div class="bloco">
+              <div class="arquivo"><b>POST</b><span>/api/ativo</span></div>
+<pre>{
+  <span class="kw">"simbolo"</span>: "BTCUSDT",
+  <span class="kw">"moedaBase"</span>: "BTC",
+  <span class="kw">"moedaCotacao"</span>: "USDT",
+  <span class="kw">"tipo"</span>: "Cripto",
+  <span class="kw">"monitorado"</span>: true,
+  <span class="kw">"corretoraId"</span>: 1
+}</pre>
+            </div>
+            <div class="bloco">
+              <div class="arquivo"><b>201 Created</b><span>ainda sem preço</span></div>
+<pre>{
+  <span class="kw">"id"</span>: 1,
+  <span class="kw">"simbolo"</span>: "BTCUSDT",
+  <span class="kw">"ultimoPreco"</span>: null,
+  <span class="kw">"variacao24h"</span>: null,
+  <span class="kw">"atualizadoEm"</span>: null,
+  <span class="kw">"corretoraId"</span>: 1
+}</pre>
+            </div>
+          </div>
+          <p>Repare nos três <code>null</code>: preço não é algo que você informa no cadastro.
+            Ele só aparece depois do passo 3.</p>
+        </div>
+      </div>
+
+      <div class="passo">
+        <div class="marcador">3</div>
+        <div>
+          <h3>Trazer o preço</h3>
+          <p>Aqui o caminho se divide, e o que decide é o <code>codigoIntegracao</code> da
+            corretora do passo 1.</p>
+
+          <h4>Corretora integrada — automático</h4>
+          <div class="bloco">
+            <div class="arquivo"><b>POST</b><span>/api/sincronizacao/ativo/1</span></div>
+<pre><span class="cm">// sem corpo. A API consulta a Binance e grava a cotação.</span>
+{
+  <span class="kw">"id"</span>: 20,
+  <span class="kw">"preco"</span>: 78504.38000000,
+  <span class="kw">"variacao24h"</span>: -0.883,
+  <span class="kw">"precoMaximo24h"</span>: 79485.00000000,
+  <span class="kw">"precoMinimo24h"</span>: 77620.01000000,
+  <span class="kw">"fonte"</span>: "Binance",
+  <span class="kw">"ativoId"</span>: 1
+}</pre>
+          </div>
+          <p>Para atualizar todos os ativos monitorados de uma vez, use
+            <code>POST /api/sincronizacao</code> sem corpo. Ele devolve um relatório com
+            quantos deram certo e o erro de cada um que falhou — uma falha isolada não
+            derruba o lote.</p>
+
+          <h4>Corretora sem integração — manual</h4>
+          <div class="bloco">
+            <div class="arquivo"><b>POST</b><span>/api/ativo/6/cotacao</span></div>
+<pre>{
+  <span class="kw">"preco"</span>: 421500.00,
+  <span class="kw">"variacao24h"</span>: -0.51,
+  <span class="kw">"precoMaximo24h"</span>: 425000.00,
+  <span class="kw">"precoMinimo24h"</span>: 418200.00,
+  <span class="kw">"volume24h"</span>: 12500.00
+}</pre>
+          </div>
+          <p>Os dois caminhos terminam no mesmo lugar: uma linha nova no histórico e os
+            campos de preço do ativo atualizados. Nada é sobrescrito — cada cotação fica
+            guardada com a hora em que foi capturada.</p>
+        </div>
+      </div>
+
+      <div class="passo">
+        <div class="marcador">4</div>
+        <div>
+          <h3>Consultar</h3>
+          <p>Agora o ativo responde com preço, e os filtros passam a fazer sentido:</p>
+          <div class="bloco">
+            <div class="arquivo"><b>GET</b><span>consultas típicas</span></div>
+<pre><span class="cm"># tudo que tem "btc" no símbolo, do mais caro para o mais barato</span>
+/api/ativo?simbolo=btc&amp;ordenarPor=preco&amp;desc=true
+
+<span class="cm"># criptos da corretora 1 acima de US$ 1.000</span>
+/api/ativo?corretoraId=1&amp;tipo=Cripto&amp;precoMin=1000
+
+<span class="cm"># as 50 cotações mais recentes do ativo 1</span>
+/api/ativo/1/cotacao?limite=50</pre>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section id="endpoints">
+      <h2><em>04 — referência</em>Todos os endpoints</h2>
+
+      <h3>Corretora</h3>
+      <div class="tabela-rolagem">
+        <table>
+          <thead><tr><th>Rota</th><th>O que faz</th><th>Respostas</th></tr></thead>
+          <tbody>
+            <tr><td><span class="verbo get">GET</span> <code>/api/corretora</code></td><td>Lista todas.</td><td><span class="st ok">200</span></td></tr>
+            <tr><td><span class="verbo get">GET</span> <code>/api/corretora/{id}</code></td><td>Uma corretora.</td><td><span class="st ok">200</span> <span class="st ruim">404</span></td></tr>
+            <tr><td><span class="verbo post">POST</span> <code>/api/corretora</code></td><td>Cadastra.</td><td><span class="st ok">201</span> <span class="st ruim">400</span></td></tr>
+            <tr><td><span class="verbo put">PUT</span> <code>/api/corretora/{id}</code></td><td>Atualiza o cadastro inteiro.</td><td><span class="st ok">204</span> <span class="st ruim">404</span></td></tr>
+            <tr><td><span class="verbo delete">DELETE</span> <code>/api/corretora/{id}</code></td><td>Remove — <strong>só se não tiver ativos</strong>.</td><td><span class="st ok">204</span> <span class="st ruim">400</span> <span class="st ruim">404</span></td></tr>
+          </tbody>
+        </table>
+      </div>
+
+      <h3>Ativo</h3>
+      <div class="tabela-rolagem">
+        <table>
+          <thead><tr><th>Rota</th><th>O que faz</th><th>Respostas</th></tr></thead>
+          <tbody>
+            <tr><td><span class="verbo get">GET</span> <code>/api/ativo</code></td><td>Lista com os filtros da seção 5.</td><td><span class="st ok">200</span></td></tr>
+            <tr><td><span class="verbo get">GET</span> <code>/api/ativo/{id}</code></td><td>Um ativo, com a corretora dele.</td><td><span class="st ok">200</span> <span class="st ruim">404</span></td></tr>
+            <tr><td><span class="verbo post">POST</span> <code>/api/ativo</code></td><td>Cadastra numa corretora.</td><td><span class="st ok">201</span> <span class="st ruim">400</span></td></tr>
+            <tr><td><span class="verbo put">PUT</span> <code>/api/ativo/{id}</code></td><td>Atualiza o cadastro. Não mexe em preço.</td><td><span class="st ok">204</span> <span class="st ruim">400</span> <span class="st ruim">404</span></td></tr>
+            <tr><td><span class="verbo delete">DELETE</span> <code>/api/ativo/{id}</code></td><td>Remove o ativo <strong>e todo o histórico dele</strong>.</td><td><span class="st ok">204</span> <span class="st ruim">404</span></td></tr>
+          </tbody>
+        </table>
+      </div>
+
+      <h3>Cotação</h3>
+      <p>Rota aninhada: a cotação não existe fora de um ativo, e a URL diz isso.</p>
+      <div class="tabela-rolagem">
+        <table>
+          <thead><tr><th>Rota</th><th>O que faz</th><th>Respostas</th></tr></thead>
+          <tbody>
+            <tr><td><span class="verbo get">GET</span> <code>/api/ativo/{ativoId}/cotacao</code></td><td>Histórico, do mais recente para o mais antigo. Aceita <code>desde</code>, <code>ate</code> e <code>limite</code>.</td><td><span class="st ok">200</span> <span class="st ruim">404</span></td></tr>
+            <tr><td><span class="verbo get">GET</span> <code>/api/ativo/{ativoId}/cotacao/{id}</code></td><td>Uma cotação específica daquele ativo.</td><td><span class="st ok">200</span> <span class="st ruim">404</span></td></tr>
+            <tr><td><span class="verbo post">POST</span> <code>/api/ativo/{ativoId}/cotacao</code></td><td>Lança preço na mão.</td><td><span class="st ok">201</span> <span class="st ruim">400</span> <span class="st ruim">404</span></td></tr>
+            <tr><td><span class="verbo delete">DELETE</span> <code>/api/ativo/{ativoId}/cotacao/{id}</code></td><td>Apaga uma cotação do histórico.</td><td><span class="st ok">204</span> <span class="st ruim">404</span></td></tr>
+          </tbody>
+        </table>
+      </div>
+      <p><code>limite</code> vem 100 por padrão e para em 500, mesmo que você peça mais —
+        um teto para uma consulta distraída não puxar o histórico inteiro.</p>
+
+      <h3>Sincronização</h3>
+      <div class="tabela-rolagem">
+        <table>
+          <thead><tr><th>Rota</th><th>O que faz</th><th>Respostas</th></tr></thead>
+          <tbody>
+            <tr><td><span class="verbo post">POST</span> <code>/api/sincronizacao/ativo/{id}</code></td><td>Puxa o preço de um ativo na Binance.</td><td><span class="st ok">200</span> <span class="st ruim">400</span> <span class="st ruim">404</span> <span class="st ruim">502</span></td></tr>
+            <tr><td><span class="verbo post">POST</span> <code>/api/sincronizacao</code></td><td>Puxa o preço de todos os ativos monitorados de corretoras integradas.</td><td><span class="st ok">200</span></td></tr>
+          </tbody>
+        </table>
+      </div>
+      <p>São POST, e não GET, porque cada chamada <em>escreve</em> no banco: nasce uma
+        cotação nova. GET, por contrato do HTTP, não pode ter efeito colateral — e pode ser
+        cacheado por qualquer proxy no caminho.</p>
+      <p>O lote sempre responde <span class="st ok">200</span>, mesmo com falhas: o corpo traz
+        <code>totalConsiderados</code>, <code>sincronizados</code>, <code>comFalha</code> e a
+        lista item a item com o erro de cada símbolo que não veio.</p>
+    </section>
+
+    <section id="filtros">
+      <h2><em>05 — consulta</em>Os filtros de ativo</h2>
+      <p>Todos opcionais, todos combináveis entre si — cada um que você preenche
+        <em>estreita</em> o resultado. Vão na query string de <code>GET /api/ativo</code>.</p>
+
+      <div class="tabela-rolagem">
+        <table>
+          <thead><tr><th>Parâmetro</th><th>Tipo</th><th>O que faz</th><th>Exemplo</th></tr></thead>
+          <tbody>
+            <tr><td><code>corretoraId</code></td><td>inteiro</td><td>Só os ativos daquela corretora.</td><td class="num"><code>?corretoraId=1</code></td></tr>
+            <tr><td><code>simbolo</code></td><td>texto</td><td>Busca <strong>parcial</strong>, ignora maiúsculas. <code>btc</code> traz BTCUSDT e BTCBRL.</td><td><code>?simbolo=btc</code></td></tr>
+            <tr><td><code>tipo</code></td><td>texto</td><td><code>Cripto</code>, <code>Stablecoin</code> ou <code>Token</code>.</td><td><code>?tipo=Stablecoin</code></td></tr>
+            <tr><td><code>precoMin</code></td><td>decimal</td><td>Último preço maior ou igual.</td><td class="num"><code>?precoMin=1000</code></td></tr>
+            <tr><td><code>precoMax</code></td><td>decimal</td><td>Último preço menor ou igual.</td><td class="num"><code>?precoMax=500000</code></td></tr>
+            <tr><td><code>monitorado</code></td><td>booleano</td><td>Só os que entram (ou não) na sincronização em lote.</td><td><code>?monitorado=true</code></td></tr>
+            <tr><td><code>ordenarPor</code></td><td>texto</td><td><code>simbolo</code> (padrão), <code>preco</code> ou <code>variacao</code>.</td><td><code>?ordenarPor=preco</code></td></tr>
+            <tr><td><code>desc</code></td><td>booleano</td><td>Inverte a ordenação.</td><td><code>?desc=true</code></td></tr>
+          </tbody>
+        </table>
+      </div>
+
+      <div class="aviso cuidado">
+        <span class="rotulo">Ativo sem preço não aparece na faixa</span>
+        <p>Um ativo recém-cadastrado tem <code>ultimoPreco: null</code> — e <code>null</code>
+          não é maior nem menor que nada. Ele fica de fora de qualquer consulta com
+          <code>precoMin</code> ou <code>precoMax</code> até a primeira cotação entrar.
+          Não é bug: é a diferença entre "não tem preço" e "tem preço zero".</p>
+      </div>
+
+      <p>Combinar é só emendar com <code>&amp;</code>. As stablecoins monitoradas da corretora
+        1, da maior variação para a menor:</p>
+      <div class="bloco">
+        <div class="arquivo"><b>GET</b><span>filtros combinados</span></div>
+<pre>/api/ativo?corretoraId=1&amp;tipo=Stablecoin&amp;monitorado=true&amp;ordenarPor=variacao&amp;desc=true</pre>
+      </div>
+    </section>
+
+    <section id="erros">
+      <h2><em>06 — diagnóstico</em>Quando dá erro</h2>
+      <p>Toda recusa vem com um corpo <code>{ "mensagem": "..." }</code> dizendo o que
+        aconteceu. O status HTTP diz de quem é a responsabilidade.</p>
+
+      <div class="tabela-rolagem">
+        <table>
+          <thead><tr><th>Status</th><th>Quando acontece</th><th>O que fazer</th></tr></thead>
+          <tbody>
+            <tr>
+              <td><span class="st ruim">400</span></td>
+              <td>Símbolo repetido na mesma corretora; corretora inexistente no cadastro do ativo; campo obrigatório faltando ou fora do tamanho; DELETE de corretora que ainda tem ativos.</td>
+              <td>A mensagem nomeia o culpado. Corrija o corpo e repita.</td>
+            </tr>
+            <tr>
+              <td><span class="st ruim">404</span></td>
+              <td>O <code>id</code> da URL não existe — ou a cotação existe, mas é de outro ativo.</td>
+              <td>Confira o id numa listagem antes.</td>
+            </tr>
+            <tr>
+              <td><span class="st ruim">400</span> <span class="st aviso-cor">na sincronização</span></td>
+              <td>O ativo é de uma corretora sem <code>codigoIntegracao</code>.</td>
+              <td>Lance a cotação manualmente, ou preencha o código na corretora.</td>
+            </tr>
+            <tr>
+              <td><span class="st ruim">502</span></td>
+              <td>A Binance recusou ou não respondeu: símbolo que não existe lá, rede fora, limite de requisições.</td>
+              <td>Não é falha da sua API — é a corretora. Confira o símbolo e tente de novo.</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+
+      <div class="aviso armadilha">
+        <span class="rotulo">502 em tudo, de uma vez só</span>
+        <p>Se <em>todos</em> os símbolos falharem ao mesmo tempo, o problema é rede, não
+          símbolo. A Binance bloqueia o <code>api.binance.com</code> por região em boa parte
+          das redes brasileiras, datacenters e VPNs, devolvendo <span class="st ruim">451</span>.
+          Por isso o projeto aponta para <code>data-api.binance.vision</code>, o endpoint
+          oficial de market data, que tem o mesmo contrato e não é bloqueado. Se alguém trocar
+          essa URL no <code>appsettings.json</code>, é aqui que quebra.</p>
+      </div>
+    </section>
+
+    <section id="conta">
+      <h2><em>07 — próximo passo</em>Conectar sua conta</h2>
+      <p>"Cadastrar uma corretora" na ApiCripto e "conectar sua conta da Binance" são duas
+        coisas diferentes, e vale separar antes de sair criando chave.</p>
+
+      <div class="tabela-rolagem">
+        <table>
+          <thead><tr><th></th><th>Preço de mercado</th><th>Sua conta</th></tr></thead>
+          <tbody>
+            <tr><td><strong>Responde</strong></td><td>Quanto vale o BTC agora</td><td>Quanto de BTC você tem</td></tr>
+            <tr><td><strong>Precisa de chave</strong></td><td>Não</td><td>Chave + secret, com assinatura</td></tr>
+            <tr><td><strong>Host</strong></td><td><code>data-api.binance.vision</code></td><td><code>api.binance.com</code></td></tr>
+            <tr><td><strong>Na ApiCripto</strong></td><td><span class="st ok">Funcionando</span></td><td><span class="st aviso-cor">Ainda não</span></td></tr>
+          </tbody>
+        </table>
+      </div>
+
+      <p>O que existe hoje é a coluna da esquerda: a API lê preço público, sem nenhuma
+        credencial. Ler saldo e posições é a coluna da direita, e exige três coisas que o
+        projeto ainda não tem.</p>
+
+      <h3>1. Assinar cada requisição</h3>
+      <p>Os endpoints de conta pedem um HMAC-SHA256 da query string inteira, usando o secret
+        como chave, mais um <code>timestamp</code> em milissegundos e o cabeçalho
+        <code>X-MBX-APIKEY</code>. Requisição sem assinatura é recusada com
+        <code>-1102 Mandatory parameter 'signature' was not sent</code>.</p>
+
+      <h3>2. Trocar de host</h3>
+      <p>O <code>data-api.binance.vision</code> devolve <span class="st ruim">404</span> em
+        <code>/api/v3/account</code> — ele é market data e nada mais. Endpoint de conta só
+        existe no <code>api.binance.com</code> e no ambiente de testes
+        <code>testnet.binance.vision</code>, e os dois estão sujeitos ao bloqueio regional
+        que o projeto evitou de propósito.</p>
+
+      <h3>3. Guardar o segredo fora do código</h3>
+      <p>Chave e secret nunca entram no <code>appsettings.json</code>: esse arquivo é
+        versionado, e o repositório é público. O lugar certo em desenvolvimento é o
+        <strong>User Secrets</strong> do .NET, que grava fora da pasta do projeto, no perfil
+        do usuário — impossível commitar por acidente.</p>
+
+      <div class="bloco">
+        <div class="arquivo"><b>terminal</b><span>ApiCripto/ApiCripto</span></div>
+<pre>dotnet user-secrets init
+dotnet user-secrets set <span class="kw">"Binance:ApiKey"</span> "sua-chave"
+dotnet user-secrets set <span class="kw">"Binance:ApiSecret"</span> "seu-secret"</pre>
+      </div>
+
+      <p>A leitura no código não muda nada: <code>IConfiguration</code> junta o
+        <code>appsettings.json</code> e os user secrets na mesma árvore, então
+        <code>_config["Binance:ApiKey"]</code> funciona igual — só que o valor vem de fora
+        do repositório.</p>
+
+      <div class="aviso cuidado">
+        <span class="rotulo">Comece pelo testnet</span>
+        <p>O <code>testnet.binance.vision</code> tem o mesmo contrato da API real, com chave
+          de brincadeira e saldo fictício. Dá para desenvolver e demonstrar a funcionalidade
+          inteira sem nenhuma credencial da sua conta de verdade encostando num projeto
+          escolar público. Quando for para a conta real, use uma chave marcada apenas como
+          <strong>leitura</strong>, sem permissão de saque nem de ordem, e com o seu IP na
+          whitelist.</p>
+      </div>
+    </section>
+
+  </main>
+</div>
+
+</body>
+</html>

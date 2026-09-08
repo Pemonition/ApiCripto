@@ -133,5 +133,9 @@ HTTP -> Controller -> Service -> Repository -> EF Core -> SQLite
                         +-> BinanceClient -> API da Binance (nos endpoints de sincronização)
 ```
 
-A documentação completa de manutenção (por que cada decisão foi tomada e como
-estender) está no arquivo **`documentacao-apicripto.html`**.
+Dois documentos acompanham o projeto, com públicos diferentes:
+
+- **`manual-apicripto.html`** — como *usar* a API: cadastrar corretora, cadastrar ativo,
+  trazer preço, filtrar e ler os erros. Comece por aqui.
+- **`documentacao-apicripto.html`** — como a API foi *construída*: por que cada decisão
+  foi tomada e como estender.
