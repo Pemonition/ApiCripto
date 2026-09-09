@@ -1,0 +1,50 @@
+# =============================================================================
+# Integração contínua.
+#
+# Roda a cada push e a cada pull request: compila em modo Release e executa a
+# suíte de testes. O badge verde no README é a prova de que o projeto compila
+# na máquina de outra pessoa — que é justamente a dúvida de quem clona.
+#
+# "--warnaserror" é deliberado: warning que ninguém corrige vira ruído, e
+# ruído esconde o warning que importa.
+# =============================================================================
+
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+jobs:
+  build-e-testes:
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Instalar .NET 8
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: '8.0.x'
+
+      - name: Restaurar dependências
+        run: dotnet restore
+
+      - name: Compilar
+        run: dotnet build --no-restore --configuration Release --warnaserror
+
+      - name: Testes
+        run: dotnet test --no-build --configuration Release --verbosity normal
+
+  # Job separado: se a imagem não constrói, o "docker compose up" que está no
+  # README não funciona — e um README que mente é pior que um README ausente.
+  imagem-docker:
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Construir a imagem
+        run: docker build -t carteira:ci .

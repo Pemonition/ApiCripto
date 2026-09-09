@@ -1,0 +1,57 @@
+# =============================================================================
+# Sobe a API e o PostgreSQL juntos:
+#
+#     docker compose up --build
+#
+# Depois: http://localhost:8080/swagger
+#
+# O objetivo é "clonou, rodou": quem for avaliar o projeto não precisa
+# instalar .NET nem PostgreSQL na máquina.
+# =============================================================================
+
+services:
+  banco:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_DB: carteira
+      POSTGRES_USER: carteira
+      POSTGRES_PASSWORD: carteira
+    ports:
+      # Exposto para você conseguir abrir o banco no DBeaver/pgAdmin durante o
+      # desenvolvimento. Em produção esta porta não sairia do container.
+      - "5432:5432"
+    volumes:
+      # Volume nomeado: os dados sobrevivem a "docker compose down".
+      # Para zerar o banco de propósito: docker compose down -v
+      - dados-carteira:/var/lib/postgresql/data
+    healthcheck:
+      # Sem isto, a API sobe antes do banco aceitar conexão, tenta migrar e
+      # morre. O healthcheck é o que permite o depends_on esperar de verdade.
+      test: ["CMD-SHELL", "pg_isready -U carteira -d carteira"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  api:
+    build: .
+    depends_on:
+      banco:
+        condition: service_healthy
+    environment:
+      # Variável de ambiente sobrepõe o appsettings.json. O "__" é como o
+      # ASP.NET representa o ":" da configuração hierárquica em ambientes que
+      # não aceitam dois-pontos no nome da variável.
+      ConnectionStrings__Default: "Host=banco;Port=5432;Database=carteira;Username=carteira;Password=carteira"
+      Binance__BaseUrl: "https://data-api.binance.vision"
+      ASPNETCORE_ENVIRONMENT: "Development"
+    ports:
+      - "8080:8080"
+    healthcheck:
+      test: ["CMD-SHELL", "wget -qO- http://localhost:8080/health || exit 1"]
+      interval: 15s
+      timeout: 5s
+      retries: 5
+      start_period: 30s
+
+volumes:
+  dados-carteira:

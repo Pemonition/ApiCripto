@@ -1,0 +1,24 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>net8.0</TargetFramework>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+    <GenerateDocumentationFile>true</GenerateDocumentationFile>
+    <NoWarn>$(NoWarn);1591</NoWarn>
+  </PropertyGroup>
+
+  <!--
+    ATENÇÃO: este projeto NÃO tem nenhum PackageReference, e isso é a regra
+    mais importante da solução inteira — não um descuido.
+
+    Sem EF Core aqui, é impossível uma entidade ganhar um atributo de
+    mapeamento. Sem ASP.NET, é impossível ela ganhar [JsonIgnore] ou saber o
+    que é um status HTTP. O domínio fica descrevendo o negócio e mais nada.
+
+    Antes de adicionar um pacote neste .csproj, pergunte se o conceito é
+    mesmo do negócio. Quase sempre a resposta é não, e o lugar certo é
+    Carteira.Infrastructure.
+  -->
+
+</Project>

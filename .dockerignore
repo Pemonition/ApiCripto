@@ -1,0 +1,11 @@
+# Mantém o contexto de build enxuto e impede que binários da sua máquina
+# entrem na imagem — o container compila do zero, com o SDK dele.
+**/bin/
+**/obj/
+**/.vs/
+**/.idea/
+**/.git/
+**/node_modules/
+*.user
+docs/
+README.md
