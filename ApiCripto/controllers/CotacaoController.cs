@@ -1,3 +1,5 @@
+using Microsoft.AspNetCore.Authorization;
+using ApiCripto.security;
 using ApiCripto.dtos;
 using ApiCripto.models;
 using ApiCripto.services;
@@ -22,6 +24,7 @@ public class CotacaoController : ControllerBase
     /// Histórico de cotações do ativo, do mais recente para o mais antigo.
     /// Ex.: /api/ativo/1/cotacao?desde=2026-09-01&amp;limite=50
     /// </summary>
+    [AllowAnonymous]
     [HttpGet]
     [ProducesResponseType(StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]
@@ -38,6 +41,7 @@ public class CotacaoController : ControllerBase
     }
 
     /// <summary>Busca uma cotação específica do ativo.</summary>
+    [AllowAnonymous]
     [HttpGet("{id:int}", Name = "ObterCotacao")]
     [ProducesResponseType(StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]
@@ -55,6 +59,7 @@ public class CotacaoController : ControllerBase
     /// <summary>
     /// Lança uma cotação manualmente (para corretora sem integração automática).
     /// </summary>
+    [Authorize(Policy = SegurancaExtensions.Administrador)]
     [HttpPost]
     [ProducesResponseType(StatusCodes.Status201Created)]
     [ProducesResponseType(StatusCodes.Status400BadRequest)]
@@ -70,6 +75,7 @@ public class CotacaoController : ControllerBase
     }
 
     /// <summary>Remove uma cotação do histórico.</summary>
+    [Authorize(Policy = SegurancaExtensions.Administrador)]
     [HttpDelete("{id:int}")]
     [ProducesResponseType(StatusCodes.Status204NoContent)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]

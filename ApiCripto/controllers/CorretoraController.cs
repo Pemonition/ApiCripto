@@ -1,3 +1,5 @@
+using Microsoft.AspNetCore.Authorization;
+using ApiCripto.security;
 using ApiCripto.dtos;
 using ApiCripto.models;
 using ApiCripto.services;
@@ -19,12 +21,14 @@ public class CorretoraController : ControllerBase
     public CorretoraController(ICorretoraService service) => _service = service;
 
     /// <summary>Lista todas as corretoras.</summary>
+    [AllowAnonymous]
     [HttpGet]
     [ProducesResponseType(StatusCodes.Status200OK)]
     public async Task<ActionResult<List<Corretora>>> Listar() =>
         Ok(await _service.ListarAsync());
 
     /// <summary>Busca uma corretora pelo Id.</summary>
+    [AllowAnonymous]
     [HttpGet("{id:int}")]
     [ProducesResponseType(StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]
@@ -35,6 +39,7 @@ public class CorretoraController : ControllerBase
     }
 
     /// <summary>Cadastra uma corretora.</summary>
+    [Authorize(Policy = SegurancaExtensions.Administrador)]
     [HttpPost]
     [ProducesResponseType(StatusCodes.Status201Created)]
     [ProducesResponseType(StatusCodes.Status400BadRequest)]
@@ -47,6 +52,7 @@ public class CorretoraController : ControllerBase
     }
 
     /// <summary>Atualiza uma corretora.</summary>
+    [Authorize(Policy = SegurancaExtensions.Administrador)]
     [HttpPut("{id:int}")]
     [ProducesResponseType(StatusCodes.Status204NoContent)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]
@@ -57,6 +63,7 @@ public class CorretoraController : ControllerBase
     }
 
     /// <summary>Remove uma corretora (só se ela não tiver ativos).</summary>
+    [Authorize(Policy = SegurancaExtensions.Administrador)]
     [HttpDelete("{id:int}")]
     [ProducesResponseType(StatusCodes.Status204NoContent)]
     [ProducesResponseType(StatusCodes.Status400BadRequest)]

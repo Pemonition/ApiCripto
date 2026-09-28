@@ -1,5 +1,15 @@
 # ApiCripto
 
+## Piloto de autenticação e autorização
+
+A API agora exige configuração de Jwt:Key para iniciar. Leituras do catálogo
+continuam públicas; alterações exigem Admin e sincronização exige o ID de um
+operador configurado. Há cadastro/login e favoritos privados por usuário.
+Consulte o [guia de configuração, regras, testes e exercício](docs/autenticacao-autorizacao.md)
+antes de executar os comandos abaixo. As permissões atuais estão no guia;
+os exemplos antigos de escrita precisam de um token autorizado.
+Não há contas ou senhas padrão.
+
 API REST em ASP.NET Core (.NET 8) que cadastra corretoras e ativos de criptomoeda
 e alimenta o histórico de preços com dados reais da **API pública da Binance**.
 

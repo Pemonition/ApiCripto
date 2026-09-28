@@ -1,3 +1,5 @@
+using Microsoft.AspNetCore.Authorization;
+using ApiCripto.security;
 using ApiCripto.dtos;
 using ApiCripto.models;
 using ApiCripto.services;
@@ -26,12 +28,14 @@ public class AtivoController : ControllerBase
     ///   /api/ativo?monitorado=true&amp;ordenarPor=preco&amp;desc=true
     /// Todos combináveis entre si.
     /// </summary>
+    [AllowAnonymous]
     [HttpGet]
     [ProducesResponseType(StatusCodes.Status200OK)]
     public async Task<ActionResult<List<Ativo>>> Listar([FromQuery] AtivoFiltro filtro) =>
         Ok(await _service.ListarAsync(filtro));
 
     /// <summary>Busca um ativo pelo Id (com a corretora dele).</summary>
+    [AllowAnonymous]
     [HttpGet("{id:int}")]
     [ProducesResponseType(StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]
@@ -42,6 +46,7 @@ public class AtivoController : ControllerBase
     }
 
     /// <summary>Cadastra um ativo em uma corretora.</summary>
+    [Authorize(Policy = SegurancaExtensions.Administrador)]
     [HttpPost]
     [ProducesResponseType(StatusCodes.Status201Created)]
     [ProducesResponseType(StatusCodes.Status400BadRequest)]
@@ -54,6 +59,7 @@ public class AtivoController : ControllerBase
     }
 
     /// <summary>Atualiza o cadastro do ativo (não mexe em preço).</summary>
+    [Authorize(Policy = SegurancaExtensions.Administrador)]
     [HttpPut("{id:int}")]
     [ProducesResponseType(StatusCodes.Status204NoContent)]
     [ProducesResponseType(StatusCodes.Status400BadRequest)]
@@ -67,6 +73,7 @@ public class AtivoController : ControllerBase
     }
 
     /// <summary>Remove o ativo e, em cascata, todo o histórico de cotações dele.</summary>
+    [Authorize(Policy = SegurancaExtensions.Administrador)]
     [HttpDelete("{id:int}")]
     [ProducesResponseType(StatusCodes.Status204NoContent)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]

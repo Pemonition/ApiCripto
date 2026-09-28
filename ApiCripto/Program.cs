@@ -4,9 +4,13 @@ using ApiCripto.infra;
 using ApiCripto.integracoes;
 using ApiCripto.repositories;
 using ApiCripto.services;
+using ApiCripto.security;
+using ApiCripto.dtos;
+using System.ComponentModel.DataAnnotations;
 using Microsoft.EntityFrameworkCore;
 
 var builder = WebApplication.CreateBuilder(args);
+builder.Services.AdicionarSeguranca(builder.Configuration);
 
 // ---------------------------------------------------------------------------
 // 1) BANCO DE DADOS
@@ -77,6 +81,20 @@ builder.Services.AddControllers()
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen(options =>
 {
+    options.AddSecurityDefinition("Bearer", new Microsoft.OpenApi.Models.OpenApiSecurityScheme
+    {
+        Type = Microsoft.OpenApi.Models.SecuritySchemeType.Http,
+        Scheme = "bearer", BearerFormat = "JWT",
+        Description = "Cole apenas o token obtido em /api/auth/login."
+    });
+    options.AddSecurityRequirement(new Microsoft.OpenApi.Models.OpenApiSecurityRequirement
+    {
+        [new Microsoft.OpenApi.Models.OpenApiSecurityScheme
+        {
+            Reference = new Microsoft.OpenApi.Models.OpenApiReference
+            { Type = Microsoft.OpenApi.Models.ReferenceType.SecurityScheme, Id = "Bearer" }
+        }] = Array.Empty<string>()
+    });
     options.SwaggerDoc("v1", new Microsoft.OpenApi.Models.OpenApiInfo
     {
         Title = "ApiCripto",
@@ -107,6 +125,21 @@ using (var scope = app.Services.CreateScope())
     var context = scope.ServiceProvider.GetRequiredService<AppDbContext>();
     context.Database.Migrate();
     DbSeeder.Seed(context);
+    // Comando local explícito; nenhum cadastro HTTP pode escolher o perfil Admin.
+    if (args.Contains("--criar-admin"))
+    {
+        var credenciais = new CredenciaisDto
+        {
+            Login = builder.Configuration["Bootstrap:Login"] ?? "",
+            Senha = builder.Configuration["Bootstrap:Senha"] ?? ""
+        };
+        Validator.ValidateObject(credenciais, new ValidationContext(credenciais), true);
+        var admin = await scope.ServiceProvider.GetRequiredService<AuthService>()
+            .RegistrarAsync(credenciais, "Admin");
+        if (admin is null) throw new InvalidOperationException("Login já existe; não foi promovido a administrador.");
+        Console.WriteLine($"Administrador criado: {admin.Id}");
+        return;
+    }
 }
 
 // Swagger habilitado sempre (é um projeto de estudo e a banca precisa abrir).
@@ -119,8 +152,13 @@ app.UseSwaggerUI(options =>
 });
 
 // Abrir a raiz http://localhost:5000 já cai no Swagger.
-app.MapGet("/", () => Results.Redirect("/swagger")).ExcludeFromDescription();
+app.MapGet("/", () => Results.Redirect("/swagger")).AllowAnonymous().ExcludeFromDescription();
 
+app.UseAuthentication();
+app.UseAuthorization();
+app.UseRateLimiter();
 app.MapControllers();
 
 app.Run();
+
+public partial class Program { }

@@ -128,6 +128,60 @@ namespace ApiCripto.Migrations
                     b.ToTable("Cotacoes");
                 });
 
+            modelBuilder.Entity("ApiCripto.models.Favorito", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("INTEGER");
+
+                    b.Property<int>("AtivoId")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<string>("Nota")
+                        .HasMaxLength(300)
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("UsuarioId")
+                        .IsRequired()
+                        .HasColumnType("TEXT");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("AtivoId");
+
+                    b.HasIndex("UsuarioId", "AtivoId")
+                        .IsUnique();
+
+                    b.ToTable("Favoritos");
+                });
+
+            modelBuilder.Entity("ApiCripto.models.Usuario", b =>
+                {
+                    b.Property<string>("Id")
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("Login")
+                        .IsRequired()
+                        .HasMaxLength(80)
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("Perfil")
+                        .IsRequired()
+                        .HasMaxLength(20)
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("SenhaHash")
+                        .IsRequired()
+                        .HasColumnType("TEXT");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("Login")
+                        .IsUnique();
+
+                    b.ToTable("Usuarios");
+                });
+
             modelBuilder.Entity("ApiCripto.models.Ativo", b =>
                 {
                     b.HasOne("ApiCripto.models.Corretora", "Corretora")
@@ -148,6 +202,21 @@ namespace ApiCripto.Migrations
                         .IsRequired();
 
                     b.Navigation("Ativo");
+                });
+
+            modelBuilder.Entity("ApiCripto.models.Favorito", b =>
+                {
+                    b.HasOne("ApiCripto.models.Ativo", null)
+                        .WithMany()
+                        .HasForeignKey("AtivoId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.HasOne("ApiCripto.models.Usuario", null)
+                        .WithMany()
+                        .HasForeignKey("UsuarioId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
                 });
 
             modelBuilder.Entity("ApiCripto.models.Ativo", b =>

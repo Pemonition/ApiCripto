@@ -1,3 +1,5 @@
+using Microsoft.AspNetCore.Authorization;
+using ApiCripto.security;
 using ApiCripto.dtos;
 using ApiCripto.models;
 using ApiCripto.services;
@@ -12,6 +14,7 @@ namespace ApiCripto.controllers;
 /// insere uma Cotacao nova. GET, por contrato HTTP, não pode ter efeito
 /// colateral e pode ser cacheado por proxies.
 /// </summary>
+[Authorize(Policy = SegurancaExtensions.Sincronizador)]
 [ApiController]
 [Route("api/[controller]")] // -> /api/sincronizacao
 [Produces("application/json")]

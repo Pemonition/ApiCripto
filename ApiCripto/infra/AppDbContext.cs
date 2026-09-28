@@ -13,9 +13,21 @@ public class AppDbContext : DbContext
     public DbSet<Corretora> Corretoras => Set<Corretora>();
     public DbSet<Ativo> Ativos => Set<Ativo>();
     public DbSet<Cotacao> Cotacoes => Set<Cotacao>();
+    public DbSet<Usuario> Usuarios => Set<Usuario>();
+    public DbSet<Favorito> Favoritos => Set<Favorito>();
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
+        modelBuilder.Entity<Usuario>().HasIndex(u => u.Login).IsUnique();
+        modelBuilder.Entity<Usuario>().Property(u => u.Login).HasMaxLength(80).IsRequired();
+        modelBuilder.Entity<Usuario>().Property(u => u.SenhaHash).IsRequired();
+        modelBuilder.Entity<Usuario>().Property(u => u.Perfil).HasMaxLength(20).IsRequired();
+        modelBuilder.Entity<Favorito>().HasIndex(f => new { f.UsuarioId, f.AtivoId }).IsUnique();
+        modelBuilder.Entity<Favorito>().Property(f => f.Nota).HasMaxLength(300);
+        modelBuilder.Entity<Favorito>().HasOne<Usuario>().WithMany()
+            .HasForeignKey(f => f.UsuarioId).OnDelete(DeleteBehavior.Cascade);
+        modelBuilder.Entity<Favorito>().HasOne<Ativo>().WithMany()
+            .HasForeignKey(f => f.AtivoId).OnDelete(DeleteBehavior.Cascade);
         // -----------------------------------------------------------------
         // Relacionamento 1: Corretora 1 --- N Ativo
         // DeleteBehavior.Restrict: o banco RECUSA apagar uma corretora que
