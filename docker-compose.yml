@@ -19,7 +19,7 @@ services:
     ports:
       # Exposto para você conseguir abrir o banco no DBeaver/pgAdmin durante o
       # desenvolvimento. Em produção esta porta não sairia do container.
-      - "5432:5432"
+      - "127.0.0.1:${CARTEIRA_DB_PORT:-5432}:5432"
     volumes:
       # Volume nomeado: os dados sobrevivem a "docker compose down".
       # Para zerar o banco de propósito: docker compose down -v
@@ -45,7 +45,7 @@ services:
       Binance__BaseUrl: "https://data-api.binance.vision"
       ASPNETCORE_ENVIRONMENT: "Development"
     ports:
-      - "8080:8080"
+      - "127.0.0.1:${CARTEIRA_API_PORT:-8080}:8080"
     healthcheck:
       test: ["CMD-SHELL", "wget -qO- http://localhost:8080/health || exit 1"]
       interval: 15s
