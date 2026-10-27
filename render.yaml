@@ -1,0 +1,14 @@
+# Blueprint do Render: New > Blueprint > escolha este repositório
+services:
+  - type: web
+    name: apicripto
+    runtime: docker
+    plan: free
+    dockerfilePath: ./Dockerfile
+    healthCheckPath: /health
+    autoDeploy: true
+    envVars:
+      - key: Sincronizacao__IntervaloMinutos
+        value: "15"
+      - key: Sincronizacao__LimitePorMinuto
+        value: "10"

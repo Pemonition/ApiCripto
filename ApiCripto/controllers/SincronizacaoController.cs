@@ -1,6 +1,7 @@
 using ApiCripto.dtos;
 using ApiCripto.models;
 using ApiCripto.services;
+using Microsoft.AspNetCore.RateLimiting;
 using Microsoft.AspNetCore.Mvc;
 
 namespace ApiCripto.controllers;
@@ -15,6 +16,7 @@ namespace ApiCripto.controllers;
 [ApiController]
 [Route("api/[controller]")] // -> /api/sincronizacao
 [Produces("application/json")]
+[EnableRateLimiting("sincronizacao")] // limite configurado no Program.cs
 public class SincronizacaoController : ControllerBase
 {
     private readonly ISincronizacaoService _service;
