@@ -1,0 +1,33 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+jobs:
+  build-test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+
+      - uses: actions/setup-dotnet@v5
+        with:
+          global-json-file: global.json
+
+      - name: Testes
+        run: dotnet test ApiCripto.sln -c Release
+
+      - name: Build da imagem Docker
+        run: docker build -t apicripto .
+
+      - name: Teste de fumaça do container
+        run: |
+          docker run -d --name app -p 8080:8080 apicripto
+          for i in $(seq 1 30); do curl -sf http://localhost:8080/health && break; sleep 2; done
+          curl -sf http://localhost:8080/health | grep -q Healthy
+          curl -sf http://localhost:8080/api/ativo | grep -q BTCUSDT
+
+      - name: Logs do container
+        if: always()
+        run: docker logs app || true
